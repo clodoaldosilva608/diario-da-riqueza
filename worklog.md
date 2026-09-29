@@ -60,3 +60,18 @@ Work Log:
 Stage Summary:
 - Prévia restaurada: infraestrutura 100% saudável
 - Script reutilizável em scripts/start_dev_daemon.py para futuros restarts de servidor
+
+---
+Task ID: 4
+Agent: Super Z (main agent)
+Task: Descobrir URL correta da prévia externa (usuário no celular recebia 404)
+
+Work Log:
+- Investigado /etc/.z-ai-config: contém chatId real "chat-3b0f3e58-9aa0-4e98-b549-73d4e90b17d7" (com prefixo chat-), userId e JWT (platform: zai)
+- Testados múltiplos formatos: session-id (404), fc-function (404), userId (404) → formato correto: preview-<chatId-completo-com-prefixo-chat>.space-z.ai → HTTP 200
+- Validado link externo completo: título correto, manifest 200, sw.js 200, ícones 200
+
+Stage Summary:
+- URL de prévia correta: https://preview-chat-3b0f3e58-9aa0-4e98-b549-73d4e90b17d7.space-z.ai/
+- O bot-id da prévia = chatId completo do /etc/.z-ai-config (com prefixo "chat-")
+- App acessível externamente (celular/desktop) e instalável como PWA
