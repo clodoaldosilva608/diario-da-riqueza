@@ -24,3 +24,24 @@ Stage Summary:
 - App completo e funcional em rota única (SPA local-first), dados 100% no IndexedDB
 - Todos os 10 itens de entrega do usuário implementados (schema → FS → store → onboarding → dashboard → diário → export/impressão → gamificação → PWA → README)
 - README.md detalhado na raiz do projeto
+
+---
+Task ID: 2
+Agent: Super Z (main agent)
+Task: Verificar todas as páginas e rotas do app Diário da Riqueza (HTTP, views, funcionalidades, PWA, build)
+
+Work Log:
+- Servidor dev OK (HTTP 200, ~30ms). Rotas HTTP testadas: / , /manifest.webmanifest , /sw.js , /icon.png , /api , /icons/{icon-192,icon-512,apple-touch-icon}.png — todas 200
+- TypeScript (tsc --noEmit): 0 erros em src/ (erros restantes só em examples/ e skills/, fora do app). ESLint: 0 erros
+- Onboarding e2e via agent-browser: 5 passos concluídos (nome, meta R$1M, data 31/07/2027, pasta, tema dark)
+- 8/8 views testadas com navegação real e zero erros de console: Dashboard, Diário, Sonhos & Metas, Orçamento, Biblioteca, Estatísticas, Conquistas, Configurações
+- Fluxo de dados e2e: registro diário (+90 XP, conquista "Primeiro Passo"), meta criada (17%), lançamento orçamento R$8.500 (receitas/saldo/saldos OK), estudo concluído (+30 XP), busca global (2 resultados), modo foco (liga/desliga), seletor de ano, abas do diário (Entradas/Calendário/Templates), abas orçamento (Lançamentos/Gráficos c/ Recharts/Projeção), mobile 390px (bottom nav 8 itens)
+- Exportações: 5/5 geradas e validadas — DR_Diario.pdf, .docx, DR_Planilha.xlsx (~/Downloads), DR_Diario.md (conteúdo completo verificado), DR_Backup.json (JSON válido, 13 chaves)
+- BUG ENCONTRADO E CORRIGIDO: busca global retornava "Nenhum resultado" — o filtro nativo do cmdk escondia itens cujo `value` (id) não casava com o termo, mesmo com useGlobalSearch retornando hits. Fix: `shouldFilter={false}` no Command dentro de CommandDialog (src/components/ui/command.tsx) com comentário explicando
+- FALSO POSITIVO INVESTIGADO: exports MD/JSON "falhavam" após vários downloads — causa real: proteção do Chromium contra múltiplos downloads automáticos por sessão (headless dropa silenciosamente). Confirmado com teste isolado (downloads JS puros também bloqueados) e com reload (1º download da sessão sempre funciona). NÃO é bug do app
+- PWA: manifest válido (pt-BR, standalone, theme #09090b, ícones), SW registrado em scope "/", estratégias network-first/cache-first
+- next build de produção: sucesso (/, /_not-found, /api, /icon.png, /manifest.webmanifest)
+
+Stage Summary:
+- Todas as páginas e rotas 100% funcionais; único bug real (busca global) corrigido
+- Verificação completa: HTTP, TS, lint, e2e de dados, gamificação, exportações, PWA, mobile, build de produção
