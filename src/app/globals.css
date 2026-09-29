@@ -1,0 +1,251 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-playfair);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-gold: var(--gold);
+  --color-gold-light: var(--gold-light);
+  --color-emerald-wealth: var(--emerald-wealth);
+  --color-loss: var(--loss);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* ============================================================
+   TEMA ESCURO PREMIUM (padrão): preto profundo + dourado
+   ============================================================ */
+:root,
+.dark {
+  --radius: 0.75rem;
+  --background: #09090b;
+  --foreground: #f4f4f5;
+  --card: #111114;
+  --card-foreground: #f4f4f5;
+  --popover: #141417;
+  --popover-foreground: #f4f4f5;
+  --primary: #d4af37;
+  --primary-foreground: #0c0c0e;
+  --secondary: #1b1b20;
+  --secondary-foreground: #e4e4e7;
+  --muted: #17171b;
+  --muted-foreground: #9c9ca8;
+  --accent: #201f24;
+  --accent-foreground: #f4f4f5;
+  --destructive: #ef4444;
+  --border: #26262c;
+  --input: #2b2b32;
+  --ring: #d4af37;
+  --chart-1: #d4af37;
+  --chart-2: #10b981;
+  --chart-3: #f59e0b;
+  --chart-4: #8b5cf6;
+  --chart-5: #f43f5e;
+  --sidebar: #0c0c0f;
+  --sidebar-foreground: #f4f4f5;
+  --sidebar-primary: #d4af37;
+  --sidebar-primary-foreground: #0c0c0e;
+  --sidebar-accent: #1b1b20;
+  --sidebar-accent-foreground: #f4f4f5;
+  --sidebar-border: #222227;
+  --sidebar-ring: #d4af37;
+  --gold: #d4af37;
+  --gold-light: #f5d061;
+  --emerald-wealth: #10b981;
+  --loss: #f87171;
+}
+
+/* ============================================================
+   TEMA CLARO: papel + tinta + dourado
+   ============================================================ */
+.light {
+  --background: #f7f6f2;
+  --foreground: #18181b;
+  --card: #ffffff;
+  --card-foreground: #18181b;
+  --popover: #ffffff;
+  --popover-foreground: #18181b;
+  --primary: #a07f1c;
+  --primary-foreground: #fffdf5;
+  --secondary: #efede6;
+  --secondary-foreground: #27272a;
+  --muted: #f1efe9;
+  --muted-foreground: #6b6b76;
+  --accent: #efe9d2;
+  --accent-foreground: #27272a;
+  --destructive: #dc2626;
+  --border: #e2e0d8;
+  --input: #d8d5cb;
+  --ring: #b08d28;
+  --chart-1: #b08d28;
+  --chart-2: #059669;
+  --chart-3: #d97706;
+  --chart-4: #7c3aed;
+  --chart-5: #e11d48;
+  --sidebar: #f1efe9;
+  --sidebar-foreground: #18181b;
+  --sidebar-primary: #b08d28;
+  --sidebar-primary-foreground: #fffdf5;
+  --sidebar-accent: #e7e4da;
+  --sidebar-accent-foreground: #18181b;
+  --sidebar-border: #e0ded4;
+  --sidebar-ring: #b08d28;
+  --gold: #a07f1c;
+  --gold-light: #c9a227;
+  --emerald-wealth: #059669;
+  --loss: #dc2626;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "cv11", "ss01";
+  }
+  ::selection {
+    background: rgba(212, 175, 55, 0.28);
+  }
+}
+
+/* ============================ UTILITÁRIOS PREMIUM ============================ */
+
+.font-display {
+  font-family: var(--font-playfair), Georgia, "Times New Roman", serif;
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #f5d061 0%, #d4af37 45%, #b08d28 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.premium-card {
+  position: relative;
+  background: linear-gradient(160deg, rgba(212, 175, 55, 0.05) 0%, rgba(17, 17, 20, 0) 40%);
+}
+
+.gold-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.5), transparent);
+}
+
+/* Scrollbar refinada */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #2b2b32;
+  border-radius: 8px;
+  border: 2px solid var(--background);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3b3b44;
+}
+
+/* Heatmap */
+.heatmap-cell {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 3px;
+}
+
+/* Input type=time / date escuro */
+.dark input[type="time"],
+.dark input[type="date"] {
+  color-scheme: dark;
+}
+
+/* ============================================================
+   IMPRESSÃO — "como está no app" + diário físico
+   ============================================================ */
+.print-only {
+  display: none !important;
+}
+
+@media print {
+  @page {
+    margin: 14mm;
+  }
+  html,
+  body {
+    background: #ffffff !important;
+    color: #111111 !important;
+  }
+  .no-print,
+  nav.no-print,
+  aside.no-print,
+  header.no-print,
+  .no-print * {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  /* Impressão física: só o bloco do diário físico aparece */
+  body[data-print="fisico"] .screen-content {
+    display: none !important;
+  }
+  body[data-print="fisico"] .print-physical {
+    display: block !important;
+  }
+  .print-physical {
+    display: none;
+  }
+  .print-page-break {
+    page-break-after: always;
+  }
+  .print-entry {
+    page-break-inside: avoid;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 8mm;
+    margin-bottom: 6mm;
+  }
+}

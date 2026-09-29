@@ -1,0 +1,339 @@
+'use client';
+
+/**
+ * AppShell — casca da aplicação:
+ * - Sidebar premium no desktop + bottom nav no mobile
+ * - Topbar com seletor de ano, busca, modo foco e status da pasta
+ * - Modo Foco (esconde distrações)
+ * - Busca global (CommandDialog)
+ */
+
+import { useEffect, useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
+import { useLiveQuery } from 'dexie-react-hooks';
+import {
+  BookOpenCheck, LayoutDashboard, NotebookPen, Target, Wallet, LibraryBig,
+  BarChart3, Trophy, Settings, Search, X, Maximize2, Minimize2, HardDrive,
+  CloudOff, ChevronsUpDown, CircleDollarSign,
+} from 'lucide-react';
+import {
+  CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
+} from '@/components/ui/command';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
+import { useAppStore } from '@/stores/useAppStore';
+import { useAvailableYears, useGamification, useGlobalSearch } from '@/hooks/useData';
+import { db } from '@/db';
+import { LevelBadge } from '@/components/shared/ui-kit';
+import type { ViewKey } from '@/types';
+
+const NAV: Array<{ key: ViewKey; label: string; icon: React.ComponentType<{ className?: string }> }> = [
+  { key: 'dashboard', label: 'Início', icon: LayoutDashboard },
+  { key: 'diario', label: 'Diário', icon: NotebookPen },
+  { key: 'sonhos', label: 'Sonhos & Metas', icon: Target },
+  { key: 'orcamento', label: 'Orçamento', icon: Wallet },
+  { key: 'biblioteca', label: 'Biblioteca', icon: LibraryBig },
+  { key: 'estatisticas', label: 'Estatísticas', icon: BarChart3 },
+  { key: 'conquistas', label: 'Conquistas', icon: Trophy },
+  { key: 'config', label: 'Configurações', icon: Settings },
+];
+
+const MOBILE_NAV = NAV.slice(0, 4);
+
+export function AppShell({ children }: { children: React.ReactNode }) {
+  const view = useAppStore((s) => s.view);
+  const setView = useAppStore((s) => s.setView);
+  const focusMode = useAppStore((s) => s.focusMode);
+  const toggleFocus = useAppStore((s) => s.toggleFocus);
+  const selectedYear = useAppStore((s) => s.selectedYear);
+  const setYear = useAppStore((s) => s.setYear);
+  const searchOpen = useAppStore((s) => s.searchOpen);
+  const setSearchOpen = useAppStore((s) => s.setSearchOpen);
+  const folderConnected = useAppStore((s) => s.folderConnected);
+  const folderName = useAppStore((s) => s.folderName);
+
+  const [query, setQuery] = useState('');
+  const years = useAvailableYears();
+  const entries = useLiveQuery(() => db.entries.toArray(), [], []);
+  const gam = useGamification(entries);
+  const hits = useGlobalSearch(query);
+
+  // Atalho de teclado: Ctrl/Cmd+K abre a busca
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if ((e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setSearchOpen(!searchOpen);
+      }
+    };
+    window.addEventListener('keydown', down);
+    return () => window.removeEventListener('keydown', down);
+  }, [searchOpen, setSearchOpen]);
+
+  const viewTitle = useMemo(() => NAV.find((n) => n.key === view)?.label ?? '', [view]);
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* ============================ SIDEBAR DESKTOP ============================ */}
+      {!focusMode && (
+        <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border/70 bg-sidebar lg:flex no-print">
+          <div className="flex items-center gap-3 px-5 py-5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-gold/40 bg-gold/10">
+              <BookOpenCheck className="h-5 w-5 text-gold" />
+            </div>
+            <div>
+              <p className="font-display text-lg font-bold leading-tight gold-gradient-text">
+                Diário da Riqueza
+              </p>
+              <p className="text-[11px] text-muted-foreground">Treino mental diário</p>
+            </div>
+          </div>
+          <div className="gold-divider mx-5" />
+          <nav className="mt-3 flex-1 space-y-1 overflow-y-auto px-3 pb-4">
+            {NAV.map((item) => {
+              const active = view === item.key;
+              return (
+                <button
+                  key={item.key}
+                  onClick={() => setView(item.key)}
+                  className={cn(
+                    'group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all',
+                    active
+                      ? 'bg-gold/12 text-gold border border-gold/25'
+                      : 'text-muted-foreground hover:bg-sidebar-accent hover:text-foreground border border-transparent',
+                  )}
+                >
+                  <item.icon className={cn('h-4.5 w-4.5 shrink-0', active && 'text-gold')} />
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
+          <div className="border-t border-border/70 p-4">
+            <LevelBadge xp={gam.totalXP} />
+            <div className="mt-3 flex items-center gap-2 text-[11px] text-muted-foreground">
+              {folderConnected ? (
+                <>
+                  <HardDrive className="h-3.5 w-3.5 text-emerald-wealth" />
+                  <span className="truncate">Pasta: {folderName}</span>
+                </>
+              ) : (
+                <>
+                  <CloudOff className="h-3.5 w-3.5" />
+                  <span>Pasta não conectada</span>
+                </>
+              )}
+            </div>
+          </div>
+        </aside>
+      )}
+
+      {/* ============================ TOPBAR ============================ */}
+      <header
+        className={cn(
+          'sticky top-0 z-30 border-b border-border/70 bg-background/85 backdrop-blur-md no-print',
+          !focusMode && 'lg:pl-64',
+        )}
+      >
+        <div className="flex h-14 items-center gap-3 px-4 sm:px-6">
+          <div className="flex items-center gap-2 lg:hidden">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-gold/40 bg-gold/10">
+              <BookOpenCheck className="h-4 w-4 text-gold" />
+            </div>
+            <span className="font-display font-bold gold-gradient-text hidden sm:inline">
+              Diário da Riqueza
+            </span>
+          </div>
+          <h1 className="hidden text-sm font-semibold text-muted-foreground lg:block">
+            {viewTitle}
+          </h1>
+          <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+            {/* Seletor de ano (múltiplos diários) */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 gap-1.5 border-gold/30">
+                  {selectedYear}
+                  <ChevronsUpDown className="h-3.5 w-3.5 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Diários por ano</DropdownMenuLabel>
+                {years.map((y) => (
+                  <DropdownMenuItem key={y} onClick={() => setYear(y)}>
+                    {y}
+                    {y === selectedYear && <span className="ml-auto text-gold">•</span>}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              aria-label="Buscar no diário"
+              onClick={() => setSearchOpen(true)}
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              aria-label={focusMode ? 'Sair do modo foco' : 'Modo foco'}
+              onClick={toggleFocus}
+            >
+              {focusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </Button>
+            {!focusMode && (
+              <div className="hidden md:block">
+                <LevelBadge xp={gam.totalXP} compact />
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* ============================ CONTEÚDO ============================ */}
+      <main className={cn('min-h-[calc(100vh-3.5rem)] pb-24 lg:pb-10', !focusMode && 'lg:pl-64')}>
+        <motion.div
+          key={view}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.22 }}
+          className="screen-content mx-auto max-w-5xl px-4 py-6 sm:px-6"
+        >
+          {children}
+        </motion.div>
+      </main>
+
+      {/* ============================ BOTTOM NAV MOBILE ============================ */}
+      {!focusMode && (
+        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)] lg:hidden no-print">
+          <div className="grid grid-cols-4">
+            {MOBILE_NAV.map((item) => {
+              const active = view === item.key;
+              return (
+                <button
+                  key={item.key}
+                  onClick={() => setView(item.key)}
+                  className={cn(
+                    'flex min-h-[56px] flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors',
+                    active ? 'text-gold' : 'text-muted-foreground',
+                  )}
+                >
+                  <item.icon className="h-5 w-5" />
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+          {/* Acesso rápido às demais views */}
+          <div className="grid grid-cols-4 border-t border-border/50">
+            {NAV.slice(4).map((item) => {
+              const active = view === item.key;
+              return (
+                <button
+                  key={item.key}
+                  onClick={() => setView(item.key)}
+                  className={cn(
+                    'flex min-h-[44px] flex-col items-center justify-center text-[9px] font-medium transition-colors',
+                    active ? 'text-gold' : 'text-muted-foreground/70',
+                  )}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+      )}
+
+      {/* ============================ BUSCA GLOBAL ============================ */}
+      <CommandDialog open={searchOpen} onOpenChange={setSearchOpen}>
+        <CommandInput
+          placeholder="Buscar no diário, metas, estudos e sonhos…"
+          value={query}
+          onValueChange={setQuery}
+        />
+        <CommandList className="max-h-80">
+          <CommandEmpty>Nenhum resultado encontrado.</CommandEmpty>
+          {hits.length > 0 && (
+            <CommandGroup heading={`${hits.length} resultado(s)`}>
+              {hits.map((h) => (
+                <CommandItem
+                  key={h.id}
+                  value={h.id}
+                  onSelect={() => {
+                    if (h.kind === 'entrada') setView('diario');
+                    else if (h.kind === 'meta' || h.kind === 'sonho') setView('sonhos');
+                    else setView('biblioteca');
+                    setSearchOpen(false);
+                    setQuery('');
+                  }}
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{h.title}</p>
+                    <p className="truncate text-xs text-muted-foreground">{h.snippet || h.kind}</p>
+                  </div>
+                  <span className="ml-auto rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase text-muted-foreground">
+                    {h.kind}
+                  </span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+        </CommandList>
+      </CommandDialog>
+    </div>
+  );
+}
+
+/** Botão "Registrar Hoje" — usado no dashboard */
+export function RegistrarHojeButton({
+  registered,
+  onClick,
+}: {
+  registered: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        'group relative flex w-full items-center justify-between gap-4 overflow-hidden rounded-2xl border p-5 text-left transition-all',
+        registered
+          ? 'border-emerald-wealth/40 bg-emerald-wealth/10'
+          : 'border-gold/40 bg-gradient-to-r from-gold/15 via-gold/8 to-transparent hover:border-gold',
+      )}
+    >
+      <div>
+        <p className="font-display text-lg font-bold">
+          {registered ? 'Dia registrado com disciplina ✓' : 'Registrar Hoje'}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          {registered
+            ? 'Toque para revisar ou editar o registro de hoje.'
+            : '+50 XP • Sua mente e sua conta agradecem'}
+        </p>
+      </div>
+      <div
+        className={cn(
+          'flex h-12 w-12 shrink-0 items-center justify-center rounded-full border transition-transform group-hover:scale-110',
+          registered ? 'border-emerald-wealth/50 text-emerald-wealth' : 'border-gold/50 text-gold',
+        )}
+      >
+        {registered ? (
+          <CircleDollarSign className="h-6 w-6" />
+        ) : (
+          <BookOpenCheck className="h-6 w-6" />
+        )}
+      </div>
+    </button>
+  );
+}
