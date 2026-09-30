@@ -135,3 +135,28 @@ Work Log:
 Stage Summary:
 - Correção publicada em https://diario-da-riqueza.vercel.app
 - Sync idempotente recria o índice na 1ª execução; readDataFile funcional → merge multi-dispositivo operante
+
+---
+Task ID: 7
+Agent: Super Z (main agent)
+Task: Aba de Ajuda + onboarding guiado + dados de exemplo do dia a dia + sync Obsidian (pedido do usuário)
+
+Work Log:
+- Feature base já existia do auto-commit a20604d (HelpView, TourGuide, seed.ts, navegação 'ajuda'); sessão atual validou, corrigiu e integrou
+- BUG CRÍTICO corrigido: seed usava db.studies.where('topic') sem índice no Dexie (SchemaError quebraria o fim do onboarding) → filtro em memória + uid nos estudos
+- Flag dr_seeded_examples corrigida: clearExampleData preserva (exemplos apagados não voltam no boot), wipeAllData remove (re-onboarding semeia de novo)
+- Auto-seed no boot (page.tsx) → usuários onboardados antes da feature também recebem exemplos
+- Banner de descoberta no Dashboard (contagem ao vivo, Saber mais, Apagar, fechar com flag própria)
+- SettingsView: card "Ajuda e dados de exemplo" (Refazer tour guiado, Central de Ajuda, contagem, Limpar exemplos com AlertDialog)
+- 5 erros de TS antigos corrigidos (paths.removeEntry opcional, SaveDestination/VaultFile imports, downloadFile aceita Uint8Array, EntryTemplate.updatedAt) → tsc limpo
+- Testes: scripts/test_seed.ts com 55 testes (datas relativas, exemplo:true em tudo, XP 50+40 espelhando saveEntry, clamp do orçamento, seeds→buildVaultFiles gera 12 arquivos corretos); 66/66 Obsidian mantidos
+- e2e agent-browser: onboarding 5 passos → dashboard com streak 3 e 270 XP → tour abre automático (10 passos, spotlight) → Ajuda (FAQ/guia/exemplos/problemas) → Configurações (14 exemplos, limpar → 20 removidos, reload não re-semeia, flag resetada re-semeia 14) → zero erros de console
+- Git: auto-commit UUID desfeito com reset --soft → commit único be521f8; push GitHub
+- Deploy: .vercel/project.json estava linkado ao projeto errado ("my-project") → relinkado para diario-da-riqueza e deploy --prod; projeto acidental deletado via API (204); marcadores confirmados ao vivo nos chunks (tour/seed/ajuda)
+
+Stage Summary:
+- Produção atualizada: https://diario-da-riqueza.vercel.app
+- Usuário novo: onboarding → exemplos prontos → tour guiado → Ajuda sempre acessível
+- Usuário existente: auto-seed no boot + banner no Dashboard; limpeza em massa em 3 lugares
+- Obsidian: seeds fluem como registros normais (notas + dashboard + estado JSON); limpeza propaga tombstones
+- Lembrete: revogar tokens GitHub/Vercel compartilhados no chat
