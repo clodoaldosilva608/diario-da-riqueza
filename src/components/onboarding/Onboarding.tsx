@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { initializeDatabase } from '@/db';
+import { seedExampleData } from '@/db/seed';
 import { connectRootFolder, isFSAvailable } from '@/filesystem';
 import { useAppStore } from '@/stores/useAppStore';
 
@@ -34,6 +35,7 @@ export function Onboarding() {
   const [busy, setBusy] = useState(false);
 
   const setOnboarded = useAppStore((s) => s.setOnboarded);
+  const setTourDone = useAppStore((s) => s.setTourDone);
   const setFolder = useAppStore((s) => s.setFolder);
   const setThemeStore = useAppStore((s) => s.setTheme);
   const fsAvailable = isFSAvailable();
@@ -67,7 +69,11 @@ export function Onboarding() {
         yearGoal: parseFloat(goal),
         targetDate,
       });
+      // Semear dados de exemplo: o usuário nunca abre o app vazio —
+      // tudo marcado com exemplo:true, editável e removível depois.
+      await seedExampleData();
       setThemeStore(theme);
+      setTourDone(false); // tour guiado abre no primeiro dashboard
       setOnboarded(true);
     } catch (e) {
       toast.error('Erro ao inicializar o banco local: ' + String(e));
@@ -137,6 +143,14 @@ export function Onboarding() {
                         <p className="mt-0.5 text-xs text-muted-foreground">{d}</p>
                       </div>
                     ))}
+                  </div>
+                  <div className="mt-4 flex items-start gap-2 rounded-xl border border-gold/20 bg-gold/5 p-3 text-left">
+                    <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+                    <p className="text-xs text-muted-foreground">
+                      Você começa com <span className="font-semibold text-gold">dados de exemplo</span> (dias de
+                      diário, metas, orçamento e estudos) para explorar o método na prática — depois edita ou
+                      apaga tudo como quiser. Um tour guiado lhe espera no final.
+                    </p>
                   </div>
                 </div>
               )}

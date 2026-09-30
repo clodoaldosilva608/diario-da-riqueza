@@ -193,8 +193,12 @@ export async function saveToFolder(
 }
 
 /** Download clássico (fallback universal) */
-export function downloadFile(filename: string, data: Blob | string, mime = 'application/octet-stream'): void {
-  const blob = data instanceof Blob ? data : new Blob([data], { type: mime });
+export function downloadFile(
+  filename: string,
+  data: Blob | string | Uint8Array,
+  mime = 'application/octet-stream',
+): void {
+  const blob = data instanceof Blob ? data : new Blob([data as BlobPart], { type: mime });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

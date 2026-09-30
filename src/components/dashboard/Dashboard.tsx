@@ -6,11 +6,13 @@
  * mensagem motivacional e conquistas recentes.
  */
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { toast } from 'sonner';
 import {
   Flame, Sparkles, BookOpen, TrendingUp, Wallet, Trophy, CalendarCheck2,
-  Quote, ArrowRight, Medal, Target,
+  Quote, ArrowRight, Medal, Target, X,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,6 +28,9 @@ import { ACHIEVEMENTS } from '@/gamification/engine';
 import { GoalProgressBar, StatCard, LevelBadge } from '@/components/shared/ui-kit';
 import { Heatmap } from '@/components/dashboard/Heatmap';
 import { RegistrarHojeButton } from '@/components/layout/AppShell';
+import { countExampleData, clearExampleData } from '@/db/seed';
+
+const EXAMPLE_BANNER_DISMISSED = 'dr_exemplo_banner_ok';
 
 export function Dashboard({ onOpenEntry }: { onOpenEntry: (date: string) => void }) {
   const setView = useAppStore((s) => s.setView);
@@ -84,6 +89,13 @@ export function Dashboard({ onOpenEntry }: { onOpenEntry: (date: string) => void
   const motivation = messageOfTheDay(today);
   const daysLeft = profile ? daysUntil(profile.targetDate) : 0;
 
+  // Banner dos dados de exemplo (some para sempre após fechar ou limpar)
+  const exampleCount = useLiveQuery(() => countExampleData(), [], 0);
+  const [bannerClosed, setBannerClosed] = useState(
+    () => typeof localStorage !== 'undefined' && localStorage.getItem(EXAMPLE_BANNER_DISMISSED) === '1',
+  );
+  const showExampleBanner = exampleCount > 0 && !bannerClosed;
+
   return (
     <div className="space-y-6">
       {/* Saudação + mensagem motivacional */}
@@ -111,6 +123,64 @@ export function Dashboard({ onOpenEntry }: { onOpenEntry: (date: string) => void
         registered={gam.registeredToday}
         onClick={() => setView('diario')}
       />
+
+      {/* Banner: dados de exemplo prontos para explorar */}
+      {showExampleBanner && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-start gap-3 rounded-2xl border border-gold/30 bg-gradient-to-r from-gold/12 via-gold/5 to-transparent p-4"
+        >
+          <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-gold" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold">
+              Você começa com dados de exemplo prontos
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {exampleCount} registro(s) de demonstração (diário, metas, orçamento e estudos) para você
+              ver o método funcionando — sincronizados com o Obsidian. Explore, edite ou apague quando quiser.
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-gold/40 text-gold"
+              onClick={() => setView('ajuda')}
+            >
+              Saber mais
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={async () => {
+                try {
+                  const n = await clearExampleData();
+                  toast.success(`${n} registro(s) de exemplo apagado(s).`);
+                } catch (e) {
+                  toast.error('Falha ao apagar exemplos: ' + String(e));
+                }
+              }}
+            >
+              Apagar
+            </Button>
+            <button
+              aria-label="Fechar aviso"
+              className="text-muted-foreground transition-colors hover:text-foreground"
+              onClick={() => {
+                setBannerClosed(true);
+                try {
+                  localStorage.setItem(EXAMPLE_BANNER_DISMISSED, '1');
+                } catch {
+                  /* storage indisponível — banner só volta no próximo boot */
+                }
+              }}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </motion.div>
+      )}
 
       {/* Meta anual + mensagem do dia */}
       <div className="grid gap-4 md:grid-cols-2">

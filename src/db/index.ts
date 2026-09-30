@@ -30,6 +30,14 @@ export interface StoredHandle {
   savedAt: string;
 }
 
+/**
+ * Flag localStorage de "dados de exemplo já semeados alguma vez" (seed.ts).
+ * - seedExampleData grava '1' → auto-seed do boot não repete;
+ * - clearExampleData mantém '1' → exemplos apagados não voltam sozinhos;
+ * - wipeAllData remove → re-onboarding semeia novamente.
+ */
+export const SEED_EXAMPLES_FLAG = 'dr_seeded_examples';
+
 export class DiarioRiquezaDB extends Dexie {
   profile!: Table<Profile, string>;
   dreams!: Table<Dream, number>;
@@ -265,6 +273,8 @@ export async function wipeAllData(): Promise<void> {
       ]);
     },
   );
+  // Limpa a flag de exemplos: o re-onboarding deve semear dados de exemplo de novo
+  if (typeof localStorage !== 'undefined') localStorage.removeItem(SEED_EXAMPLES_FLAG);
 }
 
 /** Dump completo de todas as tabelas — usado por backup JSON e restauração */

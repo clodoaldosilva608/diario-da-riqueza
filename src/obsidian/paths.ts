@@ -89,7 +89,7 @@ export async function removePathAt(root: DirHandle, path: string): Promise<void>
       ? { segments: [], fileName: path }
       : splitVaultPath(path);
     const dir = segments.length ? await resolveDirHandle(root, segments, false) : root;
-    await dir.removeEntry(fileName);
+    await dir.removeEntry?.(fileName);
   } catch {
     /* já não existe — ok */
   }

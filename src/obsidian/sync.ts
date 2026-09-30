@@ -15,12 +15,12 @@
 
 import { db, ensureUids } from '@/db';
 import { saveToFolder, buildFileName, downloadFile, isFSAvailable } from '@/filesystem';
-import type { DirHandle, FileHandleLike, SaveDestination } from '@/filesystem';
+import type { DirHandle, FileHandleLike } from '@/filesystem';
 import type { SyncTable } from '@/db';
-import type { DiaryEntry } from '@/types';
-import { buildVaultFiles, parseStateFile, VAULT_NS, DATA_FILE, INDEX_FILE, VAULT_DIRS, type VaultFile, type VaultSnapshot } from './vault';
+import type { DiaryEntry, SaveDestination } from '@/types';
+import { buildVaultFiles, parseStateFile, VAULT_NS, DATA_FILE, INDEX_FILE, VAULT_DIRS, type VaultSnapshot } from './vault';
 import { computeMerge, type MergePlan } from './merge';
-import { splitFrontmatter, extractSection } from './markdown';
+import { splitFrontmatter, extractSection, type VaultFile } from './markdown';
 import { getDeviceId } from './crypto';
 import { putPathAt, readPathAt, removePathAt } from './paths';
 

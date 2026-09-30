@@ -14,7 +14,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import {
   BookOpenCheck, LayoutDashboard, NotebookPen, Target, Wallet, LibraryBig,
   BarChart3, Trophy, Settings, Search, X, Maximize2, Minimize2, HardDrive,
-  CloudOff, ChevronsUpDown, CircleDollarSign,
+  CloudOff, ChevronsUpDown, CircleDollarSign, LifeBuoy,
 } from 'lucide-react';
 import {
   CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
@@ -41,6 +41,7 @@ const NAV: Array<{ key: ViewKey; label: string; icon: React.ComponentType<{ clas
   { key: 'biblioteca', label: 'Biblioteca', icon: LibraryBig },
   { key: 'estatisticas', label: 'Estatísticas', icon: BarChart3 },
   { key: 'conquistas', label: 'Conquistas', icon: Trophy },
+  { key: 'ajuda', label: 'Ajuda', icon: LifeBuoy },
   { key: 'config', label: 'Configurações', icon: Settings },
 ];
 
@@ -126,6 +127,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               return (
                 <button
                   key={item.key}
+                  data-tour={`nav-${item.key}`}
                   onClick={() => setView(item.key)}
                   className={cn(
                     'group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all',
@@ -259,13 +261,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               );
             })}
           </div>
-          {/* Acesso rápido às demais views */}
-          <div className="grid grid-cols-4 border-t border-border/50">
+          {/* Acesso rápido às demais views (5 colunas p/ acomodar Ajuda) */}
+          <div className="grid grid-cols-5 border-t border-border/50">
             {NAV.slice(4).map((item) => {
               const active = view === item.key;
               return (
                 <button
                   key={item.key}
+                  data-tour={`nav-${item.key}`}
                   onClick={() => setView(item.key)}
                   className={cn(
                     'flex min-h-[44px] flex-col items-center justify-center text-[9px] font-medium transition-colors',
@@ -331,6 +334,7 @@ export function RegistrarHojeButton({
 }) {
   return (
     <button
+      data-tour="registrar-hoje"
       onClick={onClick}
       className={cn(
         'group relative flex w-full items-center justify-between gap-4 overflow-hidden rounded-2xl border p-5 text-left transition-all',

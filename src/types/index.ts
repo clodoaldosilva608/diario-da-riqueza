@@ -74,6 +74,7 @@ export type ViewKey =
   | 'biblioteca'
   | 'estatisticas'
   | 'conquistas'
+  | 'ajuda'
   | 'config';
 
 /* ============================== ENTIDADES ==============================
@@ -115,6 +116,8 @@ export interface Dream {
   achieved: boolean;
   createdAt: string;
   updatedAt?: string;
+  /** Dado semeado como exemplo — pode ser limpo em massa nas Configurações */
+  exemplo?: boolean;
 }
 
 /** Meta categorizada — mínimo recomendado: 10 */
@@ -132,6 +135,7 @@ export interface Goal {
   createdAt: string;
   updatedAt?: string;
   completedAt?: string;
+  exemplo?: boolean;
 }
 
 /** Lançamento do orçamento */
@@ -147,6 +151,7 @@ export interface BudgetEntry {
   frequency: BudgetFrequency;
   createdAt: string;
   updatedAt?: string;
+  exemplo?: boolean;
 }
 
 /** Tema de estudo (curriculum pré-semeado + temas custom) */
@@ -164,6 +169,7 @@ export interface Study {
   createdAt: string;
   updatedAt?: string;
   completedAt?: string;
+  exemplo?: boolean;
 }
 
 /** Entrada diária do diário — o coração do app. Uma por dia (date único). */
@@ -195,6 +201,7 @@ export interface DiaryEntry {
   xpEarned: number;
   createdAt: string;
   updatedAt: string;
+  exemplo?: boolean;
 }
 
 /** Anexo de uma entrada (foto de recibo, print etc.) — guardado como dataURL */
@@ -216,6 +223,8 @@ export interface XPEvent {
   date: string;
   description?: string;
   createdAt: string;
+  /** XP semeado como exemplo (limpo junto com os dados de exemplo) */
+  exemplo?: boolean;
 }
 
 /** Conquista desbloqueada */
@@ -248,6 +257,8 @@ export interface EntryTemplate {
   mood?: MoodType;
   energy?: number;
   createdAt: string;
+  updatedAt?: string;
+  exemplo?: boolean;
 }
 
 /* ============================== GAMIFICAÇÃO ============================== */

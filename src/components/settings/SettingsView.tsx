@@ -7,9 +7,11 @@
 
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { useLiveQuery } from 'dexie-react-hooks';
 import {
   Settings, User, HardDrive, CloudDownload, FolderPlus, Save, BellRing,
   Palette, Printer, FileDown, RotateCcw, TriangleAlert, Trash2, FolderCheck,
+  LifeBuoy, PlayCircle, Database,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,6 +43,7 @@ import {
 import { exportData, type ExportScope } from '@/export';
 import { useAppStore } from '@/stores/useAppStore';
 import { requestNotificationPermission } from '@/hooks/useReminder';
+import { countExampleData, clearExampleData } from '@/db/seed';
 import type { ExportFormat } from '@/types';
 
 type ScopeKind = 'completo' | 'ano' | 'mes';
@@ -66,6 +69,11 @@ export function SettingsView() {
 
   // Perigo
   const [wipeOpen, setWipeOpen] = useState(false);
+
+  // Dados de exemplo
+  const liveExamples = useLiveQuery(() => countExampleData(), [], 0);
+  const [examplesOpen, setExamplesOpen] = useState(false);
+  const [clearingExamples, setClearingExamples] = useState(false);
 
   // Backups da pasta real
   const folderBackups = listFolderBackups(store.folderConnected);
@@ -502,6 +510,53 @@ export function SettingsView() {
         </CardContent>
       </Card>
 
+      {/* ===================== AJUDA & DADOS DE EXEMPLO ===================== */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <LifeBuoy className="h-4 w-4 text-gold" /> Ajuda e dados de exemplo
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              className="border-gold/40 text-gold"
+              onClick={() => {
+                store.setTourDone(false);
+                store.setTourOpen(true);
+                store.setView('dashboard');
+              }}
+            >
+              <PlayCircle className="mr-1.5 h-4 w-4" /> Refazer tour guiado
+            </Button>
+            <Button variant="ghost" onClick={() => store.setView('ajuda')}>
+              Central de Ajuda (FAQ)
+            </Button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border p-3">
+            <Database className="h-4 w-4 shrink-0 text-gold" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold">
+                {liveExamples} registro(s) de exemplo
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Dias de diário, metas, sonhos, orçamento e estudos — editáveis como qualquer registro.
+              </p>
+            </div>
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={liveExamples === 0 || clearingExamples}
+              onClick={() => setExamplesOpen(true)}
+            >
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+              {clearingExamples ? 'Apagando…' : 'Limpar exemplos'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* ===================== ZONA DE PERIGO ===================== */}
       <Card className="border-destructive/40">
         <CardHeader className="pb-3">
@@ -519,6 +574,38 @@ export function SettingsView() {
           </Button>
         </CardContent>
       </Card>
+
+      <AlertDialog open={examplesOpen} onOpenChange={setExamplesOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Apagar todos os dados de exemplo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Serão removidos {liveExamples} registro(s) marcados como exemplo (diário, metas, sonhos,
+              orçamento, estudos e o XP semeado). Seus registros reais NÃO são tocados. A remoção será
+              propagada ao vault Obsidian na próxima sincronização e os exemplos não voltam sozinhos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-white hover:bg-destructive/90"
+              onClick={async () => {
+                setClearingExamples(true);
+                try {
+                  const n = await clearExampleData();
+                  toast.success(`${n} registro(s) de exemplo apagado(s).`);
+                } catch (e) {
+                  toast.error('Falha ao apagar exemplos: ' + String(e));
+                } finally {
+                  setClearingExamples(false);
+                }
+              }}
+            >
+              Apagar exemplos
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={wipeOpen} onOpenChange={setWipeOpen}>
         <AlertDialogContent>

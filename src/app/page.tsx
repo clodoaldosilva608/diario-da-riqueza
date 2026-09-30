@@ -5,7 +5,7 @@
  * Onboarding → AppShell com views comutadas por Zustand.
  */
 
-import { useSyncExternalStore } from 'react';
+import { useSyncExternalStore, useEffect } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
 import { Onboarding } from '@/components/onboarding/Onboarding';
 import { AppShell } from '@/components/layout/AppShell';
@@ -17,9 +17,12 @@ import { LibraryView } from '@/components/library/LibraryView';
 import { StatsView } from '@/components/stats/StatsView';
 import { AchievementsView } from '@/components/achievements/AchievementsView';
 import { SettingsView } from '@/components/settings/SettingsView';
+import { HelpView } from '@/components/help/HelpView';
+import { TourGuide } from '@/components/shared/TourGuide';
 import { PrintJournal } from '@/components/print/PrintJournal';
 import { XPCelebration } from '@/components/shared/ui-kit';
 import { useDailyReminder, useAutoBackup } from '@/hooks/useReminder';
+import { seedExampleData } from '@/db/seed';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Home() {
@@ -27,6 +30,9 @@ export default function Home() {
   const view = useAppStore((s) => s.view);
   const celebration = useAppStore((s) => s.celebration);
   const clearCelebration = useAppStore((s) => s.clearCelebration);
+  const tourDone = useAppStore((s) => s.tourDone);
+  const tourOpen = useAppStore((s) => s.tourOpen);
+  const setTourOpen = useAppStore((s) => s.setTourOpen);
 
   // Hidratação do store persistido: server-snapshot false, client true pós-mount
   const hydrated = useSyncExternalStore(
@@ -37,6 +43,21 @@ export default function Home() {
 
   useDailyReminder();
   useAutoBackup();
+
+  // Tour guiado: abre automaticamente na 1ª visita pós-onboarding (dashboard)
+  useEffect(() => {
+    if (!hydrated || !onboarded || tourDone || tourOpen) return;
+    if (view !== 'dashboard') return;
+    const t = setTimeout(() => setTourOpen(true), 900);
+    return () => clearTimeout(t);
+  }, [hydrated, onboarded, tourDone, tourOpen, view, setTourOpen]);
+
+  // Dados de exemplo: semeia no boot se ainda não foram semeados (idempotente).
+  // Cobre usuários que onboardaram antes da feature existir — o app nunca fica vazio.
+  useEffect(() => {
+    if (!hydrated || !onboarded) return;
+    seedExampleData().catch((e) => console.error('Falha ao semear exemplos:', e));
+  }, [hydrated, onboarded]);
 
   if (!hydrated) {
     return (
@@ -65,8 +86,12 @@ export default function Home() {
         {view === 'biblioteca' && <LibraryView />}
         {view === 'estatisticas' && <StatsView />}
         {view === 'conquistas' && <AchievementsView />}
+        {view === 'ajuda' && <HelpView />}
         {view === 'config' && <SettingsView />}
       </AppShell>
+
+      {/* Tour guiado de primeira visita (também acionável em Ajuda/Configurações) */}
+      <TourGuide />
 
       {/* Layout físico impresso (só aparece na impressão) */}
       <PrintJournal />

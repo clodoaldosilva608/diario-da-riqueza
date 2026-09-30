@@ -119,3 +119,19 @@ Stage Summary:
 - GitHub: https://github.com/clodoaldosilva608/diario-da-riqueza
 - Fase 2 (showDirectoryPicker) não automatizável em headless — coberta por unit tests da camada pura + reuso da infra FS já validada
 -_scripts/test_obsidian.ts roda com: bun run scripts/test_obsidian.ts
+
+---
+Task ID: 6
+Agent: Super Z (main agent)
+Task: Corrigir erro "Name is not allowed" no sync do vault Obsidian (reportado pelo usuário)
+
+Work Log:
+- Diagnóstico: File System Access API proíbe "/" no nome em getFileHandle/getDirectoryHandle
+- writeVault gravava índice via ns.getFileHandle('_dados/indice-arquivos.json') → NameNotAllowedError não capturado abortava o sync; readDataFile com mesmo defeito silencioso matava o merge multi-dispositivo
+- Novo src/obsidian/paths.ts (putPathAt/readPathAt/removePathAt navegam pasta a pasta, validam segmentos)
+- 13 testes novos com FS em memória que rejeita "/" como o Chrome (66/66); lint/build OK; commit af19b4d; push GitHub; deploy Vercel confirmado (chunk 069f6d0a697c4830.js)
+- OBS: sandbox foi revertido para snapshot ed37a27 durante a sessão — recuperado com git fetch + reset --hard origin/main (nenhuma perda: tudo estava no GitHub)
+
+Stage Summary:
+- Correção publicada em https://diario-da-riqueza.vercel.app
+- Sync idempotente recria o índice na 1ª execução; readDataFile funcional → merge multi-dispositivo operante

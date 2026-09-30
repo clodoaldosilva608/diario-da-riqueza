@@ -34,6 +34,10 @@ interface AppState {
   searchOpen: boolean;
   /** Escopo de impressão física */
   printPhysical: boolean;
+  /** Tour guiado de primeira visita (persistido) */
+  tourDone: boolean;
+  /** Tour aberto agora (transiente) */
+  tourOpen: boolean;
   /** Celebração de XP (transiente) */
   celebration: { xp: number; message: string } | null;
 
@@ -50,6 +54,8 @@ interface AppState {
   setVaultSynced: (at: string) => void;
   setSearchOpen: (v: boolean) => void;
   setPrintPhysical: (v: boolean) => void;
+  setTourDone: (v: boolean) => void;
+  setTourOpen: (v: boolean) => void;
   celebrate: (xp: number, message: string) => void;
   clearCelebration: () => void;
 }
@@ -77,6 +83,8 @@ export const useAppStore = create<AppState>()(
       vaultLastSync: null,
       searchOpen: false,
       printPhysical: false,
+      tourDone: false,
+      tourOpen: false,
       celebration: null,
 
       setOnboarded: (v) => set({ onboarded: v }),
@@ -93,17 +101,26 @@ export const useAppStore = create<AppState>()(
       setVaultSynced: (at) => set({ vaultLastSync: at }),
       setSearchOpen: (v) => set({ searchOpen: v }),
       setPrintPhysical: (v) => set({ printPhysical: v }),
+      setTourDone: (v) => set({ tourDone: v }),
+      setTourOpen: (v) => set({ tourOpen: v }),
       celebrate: (xp, message) => set({ celebration: { xp, message } }),
       clearCelebration: () => set({ celebration: null }),
     }),
     {
       name: 'diario-da-riqueza',
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => localStorage),
       // Nunca persistir estado transiente
       partialize: (state) => {
-        const { celebration: _c, searchOpen: _s, ...rest } = state;
+        const { celebration: _c, searchOpen: _s, tourOpen: _t, ...rest } = state;
         return rest as AppState;
+      },
+      // v1 → v2: quem já usava o app não recebe o tour automático
+      // (pode iniciar manualmente em Configurações ou na aba Ajuda)
+      migrate: (persisted, version) => {
+        const state = (persisted ?? {}) as Partial<AppState>;
+        if (version < 2) return { ...state, tourDone: true } as AppState;
+        return state as AppState;
       },
     },
   ),
