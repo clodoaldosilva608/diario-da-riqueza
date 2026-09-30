@@ -96,3 +96,26 @@ Stage Summary:
 - HTTPS + service worker OK → PWA instalável no celular (resolverá o acesso mobile do usuário)
 - Tokens enviados pelo usuário no chat: recomendar revogação após uso (não foram commitados; .env* gitignored)
 - Redeploy futuro: vercel deploy --prod (token necessário) — integração GitHub App não configurada
+
+---
+Task ID: 5
+Agent: main
+Task: Integração Obsidian em 3 fases (pedido explícito do usuário) — implementação completa, testes, deploy
+
+Work Log:
+- Mapeado codebase: actions centralizadas em db/actions.ts, infra FS pronta (filesystem/index.ts), dumpAll/restoreDump, store Zustand persistido
+- Tipos: uid estável + updatedAt em todas as entidades sincronizáveis; DeletedLogEntry (tombstones)
+- db v3: tabela deletedLog; ensureUids/logDeletion/newUid; restoreDump tolerante a backups antigos (roda ensureUids no fim)
+- actions.ts: uid/updatedAt na criação, updatedAt nas mutações, tombstone em TODAS as deleções
+- Novo módulo src/obsidian/: markdown.ts (frontmatter YAML subset, slugify ASCII, parser, extractSection, bar unicode), vault.ts (buildVaultFiles puro + SyncStateFile), merge.ts (computeMerge LWW/tombstones/conflito de data/XP dedupe), crypto.ts (AES-256-GCM + PBKDF2 210k, magic DRQ1), sync.ts (connectVault, writeVault com índice de órfãos, importDiaryEdits por mtime, syncVaultNow, exportVaultZip com JSZip lazy, maybeAutoVaultSync)
+- UI: ObsidianIntegrationCard nas Configurações (3 fases + dialogs de senha) + auto-sync no AppShell (opt-in, silencioso)
+- Bugs pegos por teste/e2e: slugify ordem das replaces; TDZ for-of; restoreFromJSON importado do módulo errado; tabela Dexie "deleted_log" vs propriedade deletedLog; destruturação incompleta no dumpAll (corrida de edições paralelas duplicou bloco SYNC HELPERS — removido com sed); download .drq sem appendChild → substituído por downloadFile
+- e2e agent-browser: onboarding → settings → card OK; export vault ZIP (2 arquivos, estrutura validada por unzip); backup .drq (magic DRQ1) + restauração reverteu dado alterado; cache do Chromium serviu chunk velho (resolver com close/reopen)
+- Validação: 53/53 testes unitários (bun), ESLint limpo, next build OK
+- Deploy: push GitHub (38f2977) + Vercel produção no domínio correto; projeto acidental "my-project" deletado via API (204)
+
+Stage Summary:
+- Produção: https://diario-da-riqueza.vercel.app (atualizada)
+- GitHub: https://github.com/clodoaldosilva608/diario-da-riqueza
+- Fase 2 (showDirectoryPicker) não automatizável em headless — coberta por unit tests da camada pura + reuso da infra FS já validada
+-_scripts/test_obsidian.ts roda com: bun run scripts/test_obsidian.ts
