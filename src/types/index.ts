@@ -76,7 +76,22 @@ export type ViewKey =
   | 'conquistas'
   | 'config';
 
-/* ============================== ENTIDADES ============================== */
+/* ============================== ENTIDADES ==============================
+ *
+ * Sincronização entre dispositivos (Obsidian/vault):
+ * - `uid` é a identidade ESTÁVEL do registro entre dispositivos (o `id` local
+ *   do Dexie é auto-incremento e difere em cada dispositivo).
+ * - `updatedAt` alimenta o last-write-wins do merge.
+ */
+
+/** Registro apagado — impede ressurreição no sync multi-dispositivo */
+export interface DeletedLogEntry {
+  /** `${table}:${uid}` — chave estável e universal */
+  key: string;
+  table: string;
+  uid: string;
+  deletedAt: string;
+}
 
 /** Perfil único do usuário (registro singleton id = 'profile') */
 export interface Profile {
@@ -94,15 +109,18 @@ export interface Profile {
 /** Sonho livre (lista de sonhos da capa do diário físico) */
 export interface Dream {
   id?: number;
+  uid?: string;
   title: string;
   description?: string;
   achieved: boolean;
   createdAt: string;
+  updatedAt?: string;
 }
 
 /** Meta categorizada — mínimo recomendado: 10 */
 export interface Goal {
   id?: number;
+  uid?: string;
   category: GoalCategory;
   title: string;
   description?: string;
@@ -112,12 +130,14 @@ export interface Goal {
   deadline?: string; // 'yyyy-MM-dd'
   status: GoalStatus;
   createdAt: string;
+  updatedAt?: string;
   completedAt?: string;
 }
 
 /** Lançamento do orçamento */
 export interface BudgetEntry {
   id?: number;
+  uid?: string;
   type: BudgetType;
   category: string;
   description: string;
@@ -126,11 +146,13 @@ export interface BudgetEntry {
   date: string;
   frequency: BudgetFrequency;
   createdAt: string;
+  updatedAt?: string;
 }
 
 /** Tema de estudo (curriculum pré-semeado + temas custom) */
 export interface Study {
   id?: number;
+  uid?: string;
   area: StudyArea;
   topic: string;
   description?: string;
@@ -140,12 +162,14 @@ export interface Study {
   /** Campo "O que aprendi" */
   notes?: string;
   createdAt: string;
+  updatedAt?: string;
   completedAt?: string;
 }
 
 /** Entrada diária do diário — o coração do app. Uma por dia (date único). */
 export interface DiaryEntry {
   id?: number;
+  uid?: string;
   /** 'yyyy-MM-dd' — único */
   date: string;
   /** Horário que acordou 'HH:mm' */
@@ -213,6 +237,7 @@ export interface LocalBackup {
 /** Template de entrada diária */
 export interface EntryTemplate {
   id?: number;
+  uid?: string;
   name: string;
   wakeTime?: string;
   exercise?: string;

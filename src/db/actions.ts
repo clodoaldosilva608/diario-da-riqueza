@@ -5,7 +5,7 @@
  * diretamente (exceto leitura via useLiveQuery).
  */
 
-import { db, todayISO, dumpAll, restoreDump, type FullDump } from '@/db';
+import { db, todayISO, dumpAll, restoreDump, newUid, logDeletion, type FullDump } from '@/db';
 import { computeStreak, streakBonusXP, findNewlyUnlocked, computeRecordStreak } from '@/gamification/engine';
 import { saveToFolder, buildFileName } from '@/filesystem';
 import type {
@@ -135,7 +135,13 @@ export async function saveEntry(input: SaveEntryInput): Promise<ActionResult> {
   let newAchievements: AchievementDef[] = [];
 
   if (!existing) {
-    const entry: DiaryEntry = { ...input, xpEarned: 0, createdAt: now, updatedAt: now };
+    const entry: DiaryEntry = {
+      ...input,
+      uid: newUid(),
+      xpEarned: 0,
+      createdAt: now,
+      updatedAt: now,
+    };
     // XP de registro
     xpGained += 50;
     await addXP('registro_dia', 50, input.date, 'Dia registrado');
@@ -164,7 +170,10 @@ export async function saveEntry(input: SaveEntryInput): Promise<ActionResult> {
 
 export async function deleteEntry(date: string): Promise<void> {
   const entry = await db.entries.where('date').equals(date).first();
-  if (entry?.id) await db.entries.delete(entry.id);
+  if (entry?.id) {
+    await logDeletion('entries', entry.uid);
+    await db.entries.delete(entry.id);
+  }
   await db.attachments.where('entryDate').equals(date).delete();
 }
 
@@ -206,31 +215,39 @@ export async function getAttachmentsFor(date: string): Promise<Attachment[]> {
 /* ============================== SONHOS E METAS ============================== */
 
 export async function addDream(title: string, description?: string): Promise<ActionResult> {
+  const now = new Date().toISOString();
   await db.dreams.add({
+    uid: newUid(),
     title,
     description,
     achieved: false,
-    createdAt: new Date().toISOString(),
+    createdAt: now,
+    updatedAt: now,
   });
   const newAchievements = await checkAchievements();
   return { xpGained: 0, newAchievements };
 }
 
 export async function toggleDream(dream: Dream): Promise<ActionResult> {
-  await db.dreams.update(dream.id!, { achieved: !dream.achieved });
+  await db.dreams.update(dream.id!, { achieved: !dream.achieved, updatedAt: new Date().toISOString() });
   const newAchievements = await checkAchievements();
   return { xpGained: 0, newAchievements };
 }
 
 export async function deleteDream(id: number): Promise<void> {
+  const dream = await db.dreams.get(id);
+  await logDeletion('dreams', dream?.uid);
   await db.dreams.delete(id);
 }
 
 export async function addGoal(goal: Omit<Goal, 'createdAt' | 'status'>): Promise<ActionResult> {
+  const now = new Date().toISOString();
   await db.goals.add({
     ...goal,
+    uid: newUid(),
     status: 'ativa',
-    createdAt: new Date().toISOString(),
+    createdAt: now,
+    updatedAt: now,
   });
   const newAchievements = await checkAchievements();
   return { xpGained: 0, newAchievements };
@@ -240,7 +257,7 @@ export async function updateGoal(id: number, patch: Partial<Goal>): Promise<Acti
   const current = await db.goals.get(id);
   if (!current) return { xpGained: 0, newAchievements: [] };
 
-  const next: Goal = { ...current, ...patch };
+  const next: Goal = { ...current, ...patch, updatedAt: new Date().toISOString() };
   // Conclusão de meta: XP +25 apenas na primeira vez
   let xpGained = 0;
   if (patch.status === 'concluida' && current.status !== 'concluida') {
@@ -257,6 +274,8 @@ export async function updateGoal(id: number, patch: Partial<Goal>): Promise<Acti
 }
 
 export async function deleteGoal(id: number): Promise<void> {
+  const goal = await db.goals.get(id);
+  await logDeletion('goals', goal?.uid);
   await db.goals.delete(id);
 }
 
@@ -265,15 +284,18 @@ export async function deleteGoal(id: number): Promise<void> {
 export async function addBudgetEntry(
   entry: Omit<BudgetEntry, 'createdAt'>,
 ): Promise<void> {
-  await db.budget.add({ ...entry, createdAt: new Date().toISOString() });
+  const now = new Date().toISOString();
+  await db.budget.add({ ...entry, uid: newUid(), createdAt: now, updatedAt: now });
   await checkAchievements();
 }
 
 export async function updateBudgetEntry(id: number, patch: Partial<BudgetEntry>): Promise<void> {
-  await db.budget.update(id, patch);
+  await db.budget.update(id, { ...patch, updatedAt: new Date().toISOString() });
 }
 
 export async function deleteBudgetEntry(id: number): Promise<void> {
+  const entry = await db.budget.get(id);
+  await logDeletion('budget', entry?.uid);
   await db.budget.delete(id);
 }
 
@@ -284,11 +306,14 @@ export async function addStudyTopic(study: {
   topic: string;
   description?: string;
 }): Promise<void> {
+  const now = new Date().toISOString();
   await db.studies.add({
     ...study,
+    uid: newUid(),
     status: 'nao_iniciado',
     progress: 0,
-    createdAt: new Date().toISOString(),
+    createdAt: now,
+    updatedAt: now,
   });
 }
 
@@ -297,7 +322,7 @@ export async function updateStudy(id: number, patch: Partial<Study>): Promise<Ac
   const current = await db.studies.get(id);
   if (!current) return { xpGained: 0, newAchievements: [] };
 
-  const next: Study = { ...current, ...patch };
+  const next: Study = { ...current, ...patch, updatedAt: new Date().toISOString() };
   if (patch.status === 'concluido' && current.status !== 'concluido') {
     next.progress = 100;
     next.completedAt = new Date().toISOString();
@@ -323,16 +348,21 @@ export async function updateStudy(id: number, patch: Partial<Study>): Promise<Ac
 }
 
 export async function deleteStudy(id: number): Promise<void> {
+  const study = await db.studies.get(id);
+  await logDeletion('studies', study?.uid);
   await db.studies.delete(id);
 }
 
 /* ============================== TEMPLATES ============================== */
 
 export async function addTemplate(t: Omit<Template, 'createdAt'>): Promise<void> {
-  await db.templates.add({ ...t, createdAt: new Date().toISOString() });
+  const now = new Date().toISOString();
+  await db.templates.add({ ...t, uid: newUid(), createdAt: now, updatedAt: now });
 }
 
 export async function deleteTemplate(id: number): Promise<void> {
+  const template = await db.templates.get(id);
+  await logDeletion('templates', template?.uid);
   await db.templates.delete(id);
 }
 

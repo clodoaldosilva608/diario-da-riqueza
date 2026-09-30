@@ -14,7 +14,7 @@ import type { SaveDestination } from '@/types';
 
 /* ============================== TIPOS MÍNIMOS DA API ============================== */
 
-interface DirHandle {
+export interface DirHandle {
   kind: 'directory';
   name: string;
   getDirectoryHandle(name: string, opts?: { create?: boolean }): Promise<DirHandle>;
@@ -22,16 +22,17 @@ interface DirHandle {
   values(): AsyncIterable<DirHandle | FileHandleLike>;
   queryPermission?(opts?: { mode?: 'read' | 'readwrite' }): Promise<PermissionState>;
   requestPermission?(opts?: { mode?: 'read' | 'readwrite' }): Promise<PermissionState>;
+  removeEntry?(name: string, opts?: { recursive?: boolean }): Promise<void>;
 }
 
-interface FileHandleLike {
+export interface FileHandleLike {
   kind: 'file';
   name: string;
   getFile(): Promise<File>;
   createWritable(opts?: { keepExistingData?: boolean }): Promise<WritableLike>;
 }
 
-interface WritableLike {
+export interface WritableLike {
   write(data: BufferSource | Blob | string): Promise<void>;
   close(): Promise<void>;
 }

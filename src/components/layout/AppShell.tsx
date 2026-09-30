@@ -28,6 +28,8 @@ import { cn } from '@/lib/utils';
 import { useAppStore } from '@/stores/useAppStore';
 import { useAvailableYears, useGamification, useGlobalSearch } from '@/hooks/useData';
 import { db } from '@/db';
+import { maybeAutoVaultSync } from '@/obsidian/sync';
+import { toast } from 'sonner';
 import { LevelBadge } from '@/components/shared/ui-kit';
 import type { ViewKey } from '@/types';
 
@@ -73,6 +75,31 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     window.addEventListener('keydown', down);
     return () => window.removeEventListener('keydown', down);
   }, [searchOpen, setSearchOpen]);
+
+  // Auto-sync do vault Obsidian (opt-in) — silencioso no boot
+  const vaultAutoSync = useAppStore((s) => s.vaultAutoSync);
+  const setVaultSynced = useAppStore((s) => s.setVaultSynced);
+  useEffect(() => {
+    if (!vaultAutoSync) return;
+    let cancelled = false;
+    maybeAutoVaultSync().then((res) => {
+      if (!res || cancelled) return;
+      setVaultSynced(res.at);
+      const mudou = (res.merge && (res.merge.added || res.merge.updated || res.merge.removed || res.merge.conflicts)) || res.mdImported;
+      if (mudou) {
+        toast.success('Vault do Obsidian sincronizado', {
+          description: [
+            res.merge?.added ? `+${res.merge.added} novos` : null,
+            res.merge?.updated ? `${res.merge.updated} atualizados` : null,
+            res.mdImported ? `${res.mdImported} edição(ões) importada(s)` : null,
+          ].filter(Boolean).join(' • ') || undefined,
+        });
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [vaultAutoSync, setVaultSynced]);
 
   const viewTitle = useMemo(() => NAV.find((n) => n.key === view)?.label ?? '', [view]);
 

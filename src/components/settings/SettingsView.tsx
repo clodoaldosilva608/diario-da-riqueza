@@ -26,6 +26,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { SectionHeader } from '@/components/shared/ui-kit';
+import { ObsidianIntegrationCard } from '@/components/settings/ObsidianIntegrationCard';
 import { useProfile, useBackups } from '@/hooks/useData';
 import { wipeAllData } from '@/db';
 import {
@@ -229,6 +230,9 @@ export function SettingsView() {
           )}
         </CardContent>
       </Card>
+
+      {/* ===================== INTEGRAÇÃO OBSIDIAN ===================== */}
+      <ObsidianIntegrationCard />
 
       {/* ===================== BACKUPS ===================== */}
       <Card>

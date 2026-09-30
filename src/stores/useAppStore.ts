@@ -25,6 +25,11 @@ interface AppState {
   /** Pasta conectada (espelho do File System Access) */
   folderConnected: boolean;
   folderName: string | null;
+  /** Vault do Obsidian (integração bidirecional) */
+  vaultConnected: boolean;
+  vaultName: string | null;
+  vaultAutoSync: boolean;
+  vaultLastSync: string | null;
   /** Busca global */
   searchOpen: boolean;
   /** Escopo de impressão física */
@@ -40,6 +45,9 @@ interface AppState {
   setReminder: (enabled: boolean, time?: string) => void;
   setAutoBackup: (v: boolean) => void;
   setFolder: (connected: boolean, name?: string | null) => void;
+  setVault: (connected: boolean, name?: string | null) => void;
+  setVaultAutoSync: (v: boolean) => void;
+  setVaultSynced: (at: string) => void;
   setSearchOpen: (v: boolean) => void;
   setPrintPhysical: (v: boolean) => void;
   celebrate: (xp: number, message: string) => void;
@@ -63,6 +71,10 @@ export const useAppStore = create<AppState>()(
       autoBackup: true,
       folderConnected: false,
       folderName: null,
+      vaultConnected: false,
+      vaultName: null,
+      vaultAutoSync: false,
+      vaultLastSync: null,
       searchOpen: false,
       printPhysical: false,
       celebration: null,
@@ -76,6 +88,9 @@ export const useAppStore = create<AppState>()(
         set((s) => ({ reminderEnabled: enabled, reminderTime: time ?? s.reminderTime })),
       setAutoBackup: (v) => set({ autoBackup: v }),
       setFolder: (connected, name) => set({ folderConnected: connected, folderName: name ?? null }),
+      setVault: (connected, name) => set({ vaultConnected: connected, vaultName: name ?? null }),
+      setVaultAutoSync: (v) => set({ vaultAutoSync: v }),
+      setVaultSynced: (at) => set({ vaultLastSync: at }),
       setSearchOpen: (v) => set({ searchOpen: v }),
       setPrintPhysical: (v) => set({ printPhysical: v }),
       celebrate: (xp, message) => set({ celebration: { xp, message } }),

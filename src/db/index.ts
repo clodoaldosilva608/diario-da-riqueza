@@ -19,6 +19,7 @@ import type {
   AchievementRecord,
   LocalBackup,
   EntryTemplate,
+  DeletedLogEntry,
 } from '@/types';
 
 /** Handle da pasta raiz persistido no IndexedDB (structured-cloneable no Chromium) */
@@ -42,11 +43,14 @@ export class DiarioRiquezaDB extends Dexie {
   backups!: Table<LocalBackup, number>;
   templates!: Table<EntryTemplate, number>;
   handles!: Table<StoredHandle, string>;
+  /** Tombstones de deleção — sync multi-dispositivo sem ressurreição */
+  deletedLog!: Table<DeletedLogEntry, string>;
 
   constructor() {
     super('diario_da_riqueza');
     // v2: createdAt indexado em studies/templates (necessário para orderBy)
-    this.version(2).stores({
+    // v3: + deleted_log (tombstones do sync Obsidian)
+    this.version(3).stores({
       profile: 'id',
       dreams: '++id, achieved, createdAt',
       goals: '++id, category, status, createdAt, deadline',
@@ -59,6 +63,7 @@ export class DiarioRiquezaDB extends Dexie {
       backups: '++id, createdAt',
       templates: '++id, name, createdAt',
       handles: 'key',
+      deletedLog: 'key, deletedAt',
     });
   }
 }
@@ -105,6 +110,69 @@ export const SEED_STUDIES: Array<Pick<Study, 'area' | 'topic' | 'description'>> 
   { area: 'negocios', topic: 'Branding Pessoal', description: 'Autoridade e reputação como ativos' },
   { area: 'negocios', topic: 'Escala e Processos', description: 'Sistemas, delegação e crescimento sustentável' },
 ];
+
+/* ============================== SYNC HELPERS ==============================
+ *
+ * Identidade estável entre dispositivos: o `id` do Dexie é auto-incremento
+ * e difere em cada aparelho. O `uid` (UUID gerado na criação) é quem conecta
+ * registros entre dispositivos, arquivos do vault e tombstones.
+ */
+
+export const SYNC_TABLES = ['entries', 'goals', 'budget', 'studies', 'dreams', 'templates'] as const;
+export type SyncTable = (typeof SYNC_TABLES)[number];
+
+/** UUID com fallback para navegadores sem crypto.randomUUID */
+export function newUid(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+/** Garante que todo registro sincronizável tenha uid + updatedAt (idempotente) */
+export async function ensureUids(): Promise<void> {
+  const now = new Date().toISOString();
+  const jobs: Array<Promise<unknown>> = [];
+  const patch = <T extends { uid?: string; updatedAt?: string; createdAt: string }>(
+    table: Table<T, number>,
+    rows: T[],
+  ) => {
+    const missing = rows.filter((r) => !r.uid);
+    if (missing.length === 0) return;
+    const fixed = missing.map((r) => ({
+      ...r,
+      uid: newUid(),
+      updatedAt: r.updatedAt ?? r.createdAt ?? now,
+    }));
+    jobs.push(table.bulkPut(fixed));
+  };
+  const [entries, goals, budget, studies, dreams, templates] = await Promise.all([
+    db.entries.toArray(), db.goals.toArray(), db.budget.toArray(),
+    db.studies.toArray(), db.dreams.toArray(), db.templates.toArray(),
+  ]);
+  patch(db.entries, entries);
+  patch(db.goals, goals);
+  patch(db.budget, budget);
+  patch(db.studies, studies);
+  patch(db.dreams, dreams);
+  patch(db.templates, templates);
+  await Promise.all(jobs);
+}
+
+/** Registra tombstone (chamado nas deleções p/ merge entre dispositivos) */
+export async function logDeletion(table: SyncTable, uid: string | undefined): Promise<void> {
+  if (!uid) return; // registro nunca sincronizado — ninguém precisa saber
+  await db.deletedLog.put({
+    key: `${table}:${uid}`,
+    table,
+    uid,
+    deletedAt: new Date().toISOString(),
+  });
+}
 
 /* ============================== SEED / RESET ============================== */
 
@@ -178,6 +246,7 @@ export async function wipeAllData(): Promise<void> {
       db.achievements,
       db.backups,
       db.templates,
+      db.deletedLog,
     ],
     async () => {
       await Promise.all([
@@ -192,6 +261,7 @@ export async function wipeAllData(): Promise<void> {
         db.achievements.clear(),
         db.backups.clear(),
         db.templates.clear(),
+        db.deletedLog.clear(),
       ]);
     },
   );
@@ -212,6 +282,8 @@ export interface FullDump {
   achievements: AchievementRecord[];
   backups: LocalBackup[];
   templates: EntryTemplate[];
+  /** Tombstones — sincronizados com o vault e backups completos */
+  deletedLog?: DeletedLogEntry[];
 }
 
 export async function dumpAll(): Promise<FullDump> {
@@ -227,6 +299,7 @@ export async function dumpAll(): Promise<FullDump> {
     achievements,
     backups,
     templates,
+    deletedLog,
   ] = await Promise.all([
     db.profile.toArray(),
     db.dreams.toArray(),
@@ -239,6 +312,7 @@ export async function dumpAll(): Promise<FullDump> {
     db.achievements.toArray(),
     db.backups.toArray(),
     db.templates.toArray(),
+    db.deletedLog.toArray(),
   ]);
   return {
     version: 1,
@@ -254,10 +328,12 @@ export async function dumpAll(): Promise<FullDump> {
     achievements,
     backups,
     templates,
+    deletedLog,
   };
 }
 
-/** Restaura um dump completo (substitui registros por id/key) */
+/** Restaura um dump completo (substitui registros por id/key). Tolerante a
+ * backups antigos (sem uid/deletedLog) — ensureUids() roda no fim. */
 export async function restoreDump(dump: FullDump): Promise<void> {
   if (!dump || dump.version !== 1) {
     throw new Error('Formato de backup inválido ou incompatível.');
@@ -276,6 +352,7 @@ export async function restoreDump(dump: FullDump): Promise<void> {
       db.achievements,
       db.backups,
       db.templates,
+      db.deletedLog,
     ],
     async () => {
       if (dump.profile) await db.profile.bulkPut(dump.profile);
@@ -289,6 +366,10 @@ export async function restoreDump(dump: FullDump): Promise<void> {
       if (dump.achievements) await db.achievements.bulkPut(dump.achievements);
       if (dump.backups) await db.backups.bulkPut(dump.backups);
       if (dump.templates) await db.templates.bulkPut(dump.templates);
+      // O estado volta a ser o do backup (inclui tombstones, se houver)
+      await db.deletedLog.clear();
+      if (dump.deletedLog) await db.deletedLog.bulkPut(dump.deletedLog);
     },
   );
+  await ensureUids();
 }
