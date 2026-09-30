@@ -11,7 +11,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import {
   Settings, User, HardDrive, CloudDownload, FolderPlus, Save, BellRing,
   Palette, Printer, FileDown, RotateCcw, TriangleAlert, Trash2, FolderCheck,
-  LifeBuoy, PlayCircle, Database,
+  LifeBuoy, PlayCircle, Database, Presentation, HeartHandshake,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,9 @@ import {
 } from '@/components/ui/alert-dialog';
 import { SectionHeader } from '@/components/shared/ui-kit';
 import { ObsidianIntegrationCard } from '@/components/settings/ObsidianIntegrationCard';
+import { PixSupportDialog } from '@/components/support/PixSupportDialog';
+import { WhatsAppIcon } from '@/components/support/icons';
+import { WHATSAPP_URL } from '@/lib/contact';
 import { useProfile, useBackups } from '@/hooks/useData';
 import { wipeAllData } from '@/db';
 import {
@@ -66,6 +69,9 @@ export function SettingsView() {
   const [scopeKind, setScopeKind] = useState<ScopeKind>('completo');
   const [exportMonth, setExportMonth] = useState(String(new Date().getMonth() + 1).padStart(2, '0'));
   const [exporting, setExporting] = useState<ExportFormat | null>(null);
+
+  // Apoio ao projeto
+  const [pixOpen, setPixOpen] = useState(false);
 
   // Perigo
   const [wipeOpen, setWipeOpen] = useState(false);
@@ -557,6 +563,51 @@ export function SettingsView() {
         </CardContent>
       </Card>
 
+      {/* ===================== PROJETO & APOIO ===================== */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <HeartHandshake className="h-4 w-4 text-gold" /> Projeto &amp; apoio
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Conheça a apresentação do projeto, tire dúvidas com o criador ou
+            apoie a evolução da ferramenta — tudo opcional.
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              className="border-gold/40 text-gold"
+              onClick={() => {
+                store.setLandingOpen(true);
+                window.scrollTo({ top: 0 });
+              }}
+            >
+              <Presentation className="mr-1.5 h-4 w-4" /> Ver apresentação do projeto
+            </Button>
+            <Button
+              variant="outline"
+              className="border-[#25D366]/40 text-[#25D366]"
+              asChild
+            >
+              <a
+                href={WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Falar com o criador pelo WhatsApp — abre em nova aba ou no aplicativo"
+                title="Abre uma conversa no WhatsApp com o criador do projeto"
+              >
+                <WhatsAppIcon className="mr-1.5 h-4 w-4" /> WhatsApp
+              </a>
+            </Button>
+            <Button variant="ghost" onClick={() => setPixOpen(true)}>
+              <HeartHandshake className="mr-1.5 h-4 w-4" /> Apoiar via Pix
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* ===================== ZONA DE PERIGO ===================== */}
       <Card className="border-destructive/40">
         <CardHeader className="pb-3">
@@ -632,6 +683,9 @@ export function SettingsView() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Modal de apoio via Pix */}
+      <PixSupportDialog open={pixOpen} onOpenChange={setPixOpen} />
     </div>
   );
 }

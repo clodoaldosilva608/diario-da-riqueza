@@ -7,6 +7,7 @@
 
 import { useSyncExternalStore, useEffect } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
+import { LandingPage } from '@/components/landing/LandingPage';
 import { Onboarding } from '@/components/onboarding/Onboarding';
 import { AppShell } from '@/components/layout/AppShell';
 import { Dashboard } from '@/components/dashboard/Dashboard';
@@ -33,6 +34,10 @@ export default function Home() {
   const tourDone = useAppStore((s) => s.tourDone);
   const tourOpen = useAppStore((s) => s.tourOpen);
   const setTourOpen = useAppStore((s) => s.setTourOpen);
+  const landingSeen = useAppStore((s) => s.landingSeen);
+  const setLandingSeen = useAppStore((s) => s.setLandingSeen);
+  const landingOpen = useAppStore((s) => s.landingOpen);
+  const setLandingOpen = useAppStore((s) => s.setLandingOpen);
 
   // Hidratação do store persistido: server-snapshot false, client true pós-mount
   const hydrated = useSyncExternalStore(
@@ -72,7 +77,22 @@ export default function Home() {
     );
   }
 
+  // Landing aberta manualmente (Configurações) — usuários já onboardados
+  if (landingOpen) {
+    return (
+      <LandingPage
+        enterLabel="Abrir meu Diário"
+        onEnter={() => setLandingOpen(false)}
+        onExit={() => setLandingOpen(false)}
+      />
+    );
+  }
+
+  // Visitante novo: landing → "Começar gratuitamente" → onboarding
   if (!onboarded) {
+    if (!landingSeen) {
+      return <LandingPage onEnter={() => setLandingSeen(true)} />;
+    }
     return <Onboarding />;
   }
 

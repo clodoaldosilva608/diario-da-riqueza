@@ -21,10 +21,36 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Diário da Riqueza — Treine sua mente para a riqueza",
+  metadataBase: new URL("https://diario-da-riqueza.vercel.app"),
+  title: "Diário da Riqueza — Organize metas, orçamento e hábitos com consistência",
   description:
-    "Aplicação local-first que transforma o método de treino mental e financeiro diário em um sistema poderoso: meta financeira, orçamento, estudos, diário diário e gamificação. 100% offline, seus dados ficam no seu dispositivo.",
+    "Diário da Riqueza: organize suas metas, orçamento, estudos e hábitos em uma ferramenta simples, gratuita e focada em consistência.",
   applicationName: "Diário da Riqueza",
+  keywords: [
+    "diário da riqueza",
+    "metas pessoais",
+    "metas financeiras",
+    "orçamento pessoal",
+    "hábitos",
+    "organização pessoal",
+    "diário diário",
+    "funciona offline",
+  ],
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    url: "https://diario-da-riqueza.vercel.app",
+    siteName: "Diário da Riqueza",
+    title: "Diário da Riqueza — Transforme seus objetivos em uma prática diária",
+    description:
+      "Organize metas, orçamento, estudos e hábitos para acompanhar sua evolução com clareza e consistência. Gratuito, offline e com seus dados no seu dispositivo.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Diário da Riqueza — Transforme seus objetivos em uma prática diária",
+    description:
+      "Organize metas, orçamento, estudos e hábitos em uma ferramenta simples, gratuita e focada em consistência.",
+  },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,

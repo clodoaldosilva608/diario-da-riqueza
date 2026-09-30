@@ -28,6 +28,7 @@ import { ACHIEVEMENTS } from '@/gamification/engine';
 import { GoalProgressBar, StatCard, LevelBadge } from '@/components/shared/ui-kit';
 import { Heatmap } from '@/components/dashboard/Heatmap';
 import { RegistrarHojeButton } from '@/components/layout/AppShell';
+import { SupportSection } from '@/components/support/SupportSection';
 import { countExampleData, clearExampleData } from '@/db/seed';
 
 const EXAMPLE_BANNER_DISMISSED = 'dr_exemplo_banner_ok';
@@ -129,7 +130,7 @@ export function Dashboard({ onOpenEntry }: { onOpenEntry: (date: string) => void
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-start gap-3 rounded-2xl border border-gold/30 bg-gradient-to-r from-gold/12 via-gold/5 to-transparent p-4"
+          className="flex flex-col items-start gap-3 rounded-2xl border border-gold/30 bg-gradient-to-r from-gold/12 via-gold/5 to-transparent p-4 sm:flex-row sm:items-start"
         >
           <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-gold" />
           <div className="min-w-0 flex-1">
@@ -141,7 +142,7 @@ export function Dashboard({ onOpenEntry }: { onOpenEntry: (date: string) => void
               ver o método funcionando — sincronizados com o Obsidian. Explore, edite ou apague quando quiser.
             </p>
           </div>
-          <div className="flex shrink-0 items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5 sm:shrink-0">
             <Button
               size="sm"
               variant="outline"
@@ -334,6 +335,9 @@ export function Dashboard({ onOpenEntry }: { onOpenEntry: (date: string) => void
           </CardContent>
         </Card>
       </div>
+
+      {/* Ajude a construir o projeto (WhatsApp + Pix) */}
+      <SupportSection />
     </div>
   );
 }

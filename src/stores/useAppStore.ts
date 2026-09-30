@@ -32,6 +32,10 @@ interface AppState {
   vaultLastSync: string | null;
   /** Busca global */
   searchOpen: boolean;
+  /** Landing page: nova visitação ainda não clicou em "Começar" (persistido) */
+  landingSeen: boolean;
+  /** Landing page aberta manualmente (ex.: Configurações) — transiente */
+  landingOpen: boolean;
   /** Escopo de impressão física */
   printPhysical: boolean;
   /** Tour guiado de primeira visita (persistido) */
@@ -53,6 +57,8 @@ interface AppState {
   setVaultAutoSync: (v: boolean) => void;
   setVaultSynced: (at: string) => void;
   setSearchOpen: (v: boolean) => void;
+  setLandingSeen: (v: boolean) => void;
+  setLandingOpen: (v: boolean) => void;
   setPrintPhysical: (v: boolean) => void;
   setTourDone: (v: boolean) => void;
   setTourOpen: (v: boolean) => void;
@@ -82,6 +88,8 @@ export const useAppStore = create<AppState>()(
       vaultAutoSync: false,
       vaultLastSync: null,
       searchOpen: false,
+      landingSeen: false,
+      landingOpen: false,
       printPhysical: false,
       tourDone: false,
       tourOpen: false,
@@ -100,6 +108,8 @@ export const useAppStore = create<AppState>()(
       setVaultAutoSync: (v) => set({ vaultAutoSync: v }),
       setVaultSynced: (at) => set({ vaultLastSync: at }),
       setSearchOpen: (v) => set({ searchOpen: v }),
+      setLandingSeen: (v) => set({ landingSeen: v }),
+      setLandingOpen: (v) => set({ landingOpen: v }),
       setPrintPhysical: (v) => set({ printPhysical: v }),
       setTourDone: (v) => set({ tourDone: v }),
       setTourOpen: (v) => set({ tourOpen: v }),
@@ -112,7 +122,7 @@ export const useAppStore = create<AppState>()(
       storage: createJSONStorage(() => localStorage),
       // Nunca persistir estado transiente
       partialize: (state) => {
-        const { celebration: _c, searchOpen: _s, tourOpen: _t, ...rest } = state;
+        const { celebration: _c, searchOpen: _s, tourOpen: _t, landingOpen: _l, ...rest } = state;
         return rest as AppState;
       },
       // v1 → v2: quem já usava o app não recebe o tour automático
