@@ -14,6 +14,10 @@ import {
 } from '../src/obsidian/vault';
 import { computeMerge, type LocalTables } from '../src/obsidian/merge';
 import { encryptState, decryptState } from '../src/obsidian/crypto';
+import {
+  splitVaultPath, putPathAt, readPathAt, removePathAt,
+} from '../src/obsidian/paths';
+import type { DirHandle } from '../src/filesystem';
 import type {
   Profile, DiaryEntry, Goal, Dream, Study, BudgetEntry, XPEvent, EntryTemplate, DeletedLogEntry,
 } from '../src/types';
@@ -291,6 +295,146 @@ try {
   shortPassThrew = true;
 }
 ok(shortPassThrew, 'senha curta rejeitada');
+
+/* ============================== 5. PATHS (REGRESSÃO "Name is not allowed") ============================== */
+console.log('\n[5] paths.ts — navegação de caminhos no File System Access');
+
+/**
+ * Mock de FileSystemDirectoryHandle que REJEITA nomes com `/`, `\\`, '.', '..'
+ * exatamente como o Chrome faz (NameNotAllowedError). Se qualquer helper tentar
+ * gravar um caminho aninhado de uma vez só, o teste falha — regressão travada.
+ */
+interface MockFileRecord { name: string; content: string; mtime: number }
+
+class MockFileHandle {
+  kind = 'file' as const;
+  name: string;
+  private rec: MockFileRecord;
+  constructor(rec: MockFileRecord) { this.rec = rec; this.name = rec.name; }
+  async getFile() {
+    return { text: async () => this.rec.content, lastModified: this.rec.mtime } as unknown as File;
+  }
+  async createWritable() {
+    const rec = this.rec;
+    return {
+      async write(data: string) { rec.content = data; rec.mtime = Date.now(); },
+      async close() { /* noop */ },
+    };
+  }
+}
+
+class MockDirHandle {
+  kind = 'directory' as const;
+  name: string;
+  private files = new Map<string, MockFileRecord>();
+  private dirs = new Map<string, MockDirHandle>();
+  constructor(name: string) { this.name = name; }
+
+  private assertLegal(name: string) {
+    if (
+      name.length === 0 || name === '.' || name === '..' ||
+      name.includes('/') || name.includes('\\') || name.includes('\0')
+    ) {
+      throw new DOMException(
+        "Failed to execute 'getFileHandle' on 'FileSystemDirectoryHandle': Name is not allowed.",
+        'NotAllowedError',
+      );
+    }
+  }
+
+  async getDirectoryHandle(name: string, opts?: { create?: boolean }): Promise<MockDirHandle> {
+    this.assertLegal(name);
+    let d = this.dirs.get(name);
+    if (!d) {
+      if (!opts?.create) throw new DOMException('NotFoundError', 'NotFoundError');
+      d = new MockDirHandle(name);
+      this.dirs.set(name, d);
+    }
+    return d;
+  }
+
+  async getFileHandle(name: string, opts?: { create?: boolean }): Promise<MockFileHandle> {
+    this.assertLegal(name);
+    let rec = this.files.get(name);
+    if (!rec) {
+      if (!opts?.create) throw new DOMException('NotFoundError', 'NotFoundError');
+      rec = { name, content: '', mtime: Date.now() };
+      this.files.set(name, rec);
+    }
+    return new MockFileHandle(rec);
+  }
+
+  async removeEntry(name: string): Promise<void> {
+    this.assertLegal(name);
+    if (!this.files.delete(name)) throw new DOMException('NotFoundError', 'NotFoundError');
+  }
+
+  async *values(): AsyncIterable<MockDirHandle | MockFileHandle> {
+    for (const d of this.dirs.values()) yield d;
+    for (const f of this.files.values()) yield new MockFileHandle(f);
+  }
+
+  /** Lista todos os paths relativos (para asserções) */
+  listPaths(prefix = ''): string[] {
+    const out: string[] = [];
+    for (const [name, d] of this.dirs) out.push(...d.listPaths(`${prefix}${name}/`));
+    for (const name of this.files.keys()) out.push(`${prefix}${name}`);
+    return out.sort();
+  }
+}
+
+const vaultRoot = new MockDirHandle('vault');
+const rootAsDir = vaultRoot as unknown as DirHandle;
+
+// A) splitVaultPath
+const sp = splitVaultPath('_dados/diario-da-riqueza.json');
+ok(sp.segments.length === 1 && sp.segments[0] === '_dados' && sp.fileName === 'diario-da-riqueza.json', 'splitVaultPath: 1 subpasta + arquivo');
+let badPathThrew = false;
+try { splitVaultPath('so-arquivo.md'); } catch { badPathThrew = true; }
+ok(badPathThrew, 'splitVaultPath: path sem subpasta é inválido');
+
+// B) Escrita aninhada — o mock falha o teste se alguém passar '/' no nome
+await putPathAt(rootAsDir, '_dados/diario-da-riqueza.json', '{"app":"diario-da-riqueza"}');
+await putPathAt(rootAsDir, '01-Diario/2026-10-01.md', 'conteúdo do dia');
+await putPathAt(rootAsDir, '00-Dashboard.md', '# Dashboard');
+ok(true, 'putPathAt grava nested e root sem lançar (mock valida nomes)');
+
+// C) Estrutura final correta no disco simulado
+const paths = vaultRoot.listPaths();
+ok(paths.includes('_dados/diario-da-riqueza.json') && paths.includes('01-Diario/2026-10-01.md') && paths.includes('00-Dashboard.md'), 'estrutura no disco: pastas navegadas, não nomes com /');
+
+// D) Leitura via readPathAt
+const json = await readPathAt(rootAsDir, '_dados/diario-da-riqueza.json');
+ok(json === '{"app":"diario-da-riqueza"}', 'readPathAt lê nested');
+ok((await readPathAt(rootAsDir, '00-Dashboard.md')) === '# Dashboard', 'readPathAt lê raiz');
+ok((await readPathAt(rootAsDir, '_dados/nao-existe.json')) === null, 'readPathAt inexistente → null');
+
+// E) Sobrescrita idempotente
+await putPathAt(rootAsDir, '01-Diario/2026-10-01.md', 'conteúdo v2');
+ok((await readPathAt(rootAsDir, '01-Diario/2026-10-01.md')) === 'conteúdo v2', 'putPathAt sobrescreve');
+
+// F) Remoção (cleanup de órfãos)
+await removePathAt(rootAsDir, '01-Diario/2026-10-01.md');
+ok((await readPathAt(rootAsDir, '01-Diario/2026-10-01.md')) === null, 'removePathAt remove nested');
+await removePathAt(rootAsDir, '01-Diario/2026-10-01.md'); // remover de novo não lança
+ok(true, 'removePathAt é silencioso se já não existe');
+
+// G) SIMULAÇÃO COMPLETA do writeVault: todos os arquivos do vault real + índice
+const snapSim: VaultSnapshot = { ...mkLocal(), deviceId: 'teste-paths', geradoEm: now };
+const vaultFiles = buildVaultFiles(snapSim);
+const simRoot = new MockDirHandle('vault');
+const simRootDir = simRoot as unknown as DirHandle;
+let simThrew = false;
+try {
+  for (const f of vaultFiles) await putPathAt(simRootDir, f.path, f.content);
+  await putPathAt(simRootDir, '_dados/indice-arquivos.json', JSON.stringify({ arquivos: vaultFiles.map((f) => f.path) }));
+} catch (e) {
+  simThrew = true;
+  console.error('    erro:', e instanceof Error ? e.message : e);
+}
+ok(!simThrew && simRoot.listPaths().length === vaultFiles.length + 1, `vault completo gravado sem erro (${vaultFiles.length} arquivos + índice)`);
+ok((await readPathAt(simRootDir, DATA_FILE)) !== null, 'estado de sync legível após gravação (merge multi-dispositivo desbloqueado)');
+ok((await readPathAt(simRootDir, '_dados/indice-arquivos.json')) !== null, 'índice de órfãos legível após gravação');
 
 /* ============================== RESUMO ============================== */
 console.log(`\n${'='.repeat(50)}`);

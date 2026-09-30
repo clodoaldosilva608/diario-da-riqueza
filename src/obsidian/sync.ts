@@ -22,6 +22,7 @@ import { buildVaultFiles, parseStateFile, VAULT_NS, DATA_FILE, INDEX_FILE, VAULT
 import { computeMerge, type MergePlan } from './merge';
 import { splitFrontmatter, extractSection } from './markdown';
 import { getDeviceId } from './crypto';
+import { putPathAt, readPathAt, removePathAt } from './paths';
 
 const VAULT_HANDLE_KEY = 'vault';
 const LAST_SYNC_KEY = 'dr_vault_last_sync';
@@ -229,66 +230,46 @@ async function importDiaryEdits(
 
 /* ============================== ESCRITA DO VAULT ============================== */
 
-async function putText(dir: DirHandle, name: string, content: string): Promise<void> {
-  const fh = await dir.getFileHandle(name, { create: true });
-  const w = await fh.createWritable();
-  await w.write(content);
-  await w.close();
-}
-
-/** Espelha os arquivos no vault + limpa órfãos via índice + grava índice novo */
+/**
+ * Espelha os arquivos no vault + limpa órfãos via índice + grava índice novo.
+ * TODA escrita/leitura/remoção passa pelos helpers de paths.ts — a API do
+ * File System Access proíbe `/` no nome (erro "Name is not allowed"), então
+ * caminhos aninhados são sempre navegados pasta a pasta.
+ */
 async function writeVault(root: DirHandle, files: VaultFile[]): Promise<void> {
   const ns = await root.getDirectoryHandle(VAULT_NS, { create: true });
 
   // 1. Lê índice anterior e remove arquivos órfãos (registros apagados no app)
   let previous: string[] = [];
-  try {
-    const idxHandle = await ns.getFileHandle(INDEX_FILE, { create: false });
-    const prevJson = await (await idxHandle.getFile()).text();
-    const parsed = JSON.parse(prevJson) as { arquivos?: string[] };
-    previous = parsed.arquivos ?? [];
-  } catch {
-    /* primeira sincronização — nada a limpar */
+  const prevJson = await readPathAt(ns, INDEX_FILE);
+  if (prevJson) {
+    try {
+      const parsed = JSON.parse(prevJson) as { arquivos?: string[] };
+      previous = parsed.arquivos ?? [];
+    } catch {
+      /* índice corrompido — tratado como primeira sincronização */
+    }
   }
   const current = new Set(files.map((f) => f.path));
   for (const stale of previous) {
     if (current.has(stale)) continue;
-    const [dirName, ...rest] = stale.split('/');
-    if (rest.length === 0) continue;
-    try {
-      const sub = await ns.getDirectoryHandle(dirName, { create: false });
-      await sub.removeEntry(rest.join('/'));
-    } catch {
-      /* já não existe — ok */
-    }
+    await removePathAt(ns, stale);
   }
 
-  // 2. Garante pastas e grava arquivos (sequencial — handles não gostam de corrida)
-  const dirs = new Map<string, DirHandle>();
-  const dirOf = async (name: string): Promise<DirHandle> => {
-    if (!dirs.has(name)) dirs.set(name, await ns.getDirectoryHandle(name, { create: true }));
-    return dirs.get(name)!;
-  };
+  // 2. Grava arquivos (sequencial — handles não gostam de corrida)
   for (const f of files) {
-    const slash = f.path.indexOf('/');
-    if (slash === -1) {
-      await putText(ns, f.path, f.content);
-    } else {
-      const dir = await dirOf(f.path.slice(0, slash));
-      await putText(dir, f.path.slice(slash + 1), f.content);
-    }
+    await putPathAt(ns, f.path, f.content);
   }
 
   // 3. Índice novo
-  await putText(ns, INDEX_FILE, JSON.stringify({ geradoEm: new Date().toISOString(), arquivos: [...current] }, null, 2));
+  await putPathAt(ns, INDEX_FILE, JSON.stringify({ geradoEm: new Date().toISOString(), arquivos: [...current] }, null, 2));
 }
 
 async function readDataFile(root: DirHandle): Promise<ReturnType<typeof parseStateFile>> {
   try {
     const ns = await root.getDirectoryHandle(VAULT_NS, { create: true });
-    const fh = await ns.getFileHandle(DATA_FILE, { create: false });
-    const json = await (await fh.getFile()).text();
-    return parseStateFile(json);
+    const json = await readPathAt(ns, DATA_FILE);
+    return json ? parseStateFile(json) : null;
   } catch {
     return null;
   }
