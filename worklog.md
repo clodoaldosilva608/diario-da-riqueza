@@ -160,3 +160,27 @@ Stage Summary:
 - Usuário existente: auto-seed no boot + banner no Dashboard; limpeza em massa em 3 lugares
 - Obsidian: seeds fluem como registros normais (notas + dashboard + estado JSON); limpeza propaga tombstones
 - Lembrete: revogar tokens GitHub/Vercel compartilhados no chat
+
+---
+Task ID: 8
+Agent: Super Z (main agent)
+Task: Landing page pública + botões WhatsApp e apoio via Pix na dashboard (pedido do usuário)
+
+Work Log:
+- Mapeado codebase: SPA rota única (page.tsx gateia por onboarded/view do Zustand), tema preto+dourado, shadcn/ui completo
+- Novo src/lib/contact.ts: WHATSAPP_URL (wa.me/5581920051068 com mensagem pré-preenchida encodada), PIX_KEY_DISPLAY/PIX_KEY_NORMALIZED (+5581971133707), normalizePixPhoneKey; scripts/test_contact.ts com 20 testes (todas as variações de digitação da chave)
+- PixSupportDialog: modal acessível (Radix Dialog), chave legível + cópia da chave normalizada com feedback "Chave Pix copiada" (botão + toast + aria-live), fallback execCommand p/ clipboard, instruções do app do banco, aviso de contribuição opcional, Fechar; sem QR Code (BR Code exige cidade do recebedor — tag 60 obrigatória — e o usuário proibiu inventar dados; reportado como limitação)
+- SupportSection "Ajude a construir o projeto" no Dashboard: 2 cards (WhatsApp verde #25D366 "Falar comigo" com target=_blank rel=noopener noreferrer + aria-label/title; Pix abre modal); integrado ao fim do Dashboard
+- LandingPage (src/components/landing/): header sticky, hero com h1/subtítulo/2 CTAs exatos do briefing, chips de confiança; Como funciona (5 passos numerados); Funcionalidades (10 cards reais — inclusive Obsidian); Para quem é (5 itens); O que não promete (texto exato); Privacidade (5 cards); CTA final; rodapé com ano dinâmico, WhatsApp, Pix, aviso sem garantia de retorno financeiro e link de privacidade; skip-link, aria-labelledby, scroll-mt, footer mt-auto
+- Wire: store ganhou landingSeen (persistido) e landingOpen (transiente); page.tsx: novo visitante vê landing → CTA → onboarding; onboardado entra direto no dashboard; Settings "Ver apresentação do projeto" reabre landing com "Abrir meu Diário"/"Voltar ao app"
+- SEO: layout.tsx com metadataBase, title/description novos (texto sugerido pelo usuário), keywords, openGraph pt_BR + twitter summary_large_image; scripts/generate_og.py (PIL) gerou src/app/opengraph-image.png 1200x630 + alt.txt (Tinos-Bold.ttf estava corrompido no sandbox — trocado por Liberation Serif Bold)
+- Validação: 20/20 contact + 55/55 seed + 66/66 Obsidian; tsc limpo em src/; ESLint limpo (corrigido setState-in-effect no dialog → reset via handleOpenChange); next build OK (/opengraph-image.png roteada)
+- e2e agent-browser: novo visitante vê landing (screenshot), scroll "Conhecer a ferramenta" OK, CTA → onboarding completo → dashboard com seção de apoio; wa.me href/target/rel/aria validados; modal Pix copiou com toast+feedback; Settings → apresentação → Voltar ao app → reload vai direto ao dashboard; mobile 390px: cards empilham, header compactado (fix: "Voltar ao app" hidden sm-, marca nowrap), banner de exemplos espremido no mobile CORRIGIDO (flex-col até sm); console sem erros (únicos logs: HMR transitório de edição e warning benigno do meu setup de teste)
+- Aprendizado do ambiente: SW em dev serve chunks antigos cache-first — desregistrar SW + caches.clear antes de validar UI nova (refeito 3x durante a sessão)
+- Git: commit 75bdb81 (14 arquivos, +1338/-6) enviado ao GitHub
+- DEPLOY BLOQUEADO: token Vercel do usuário rejeitado ("Not authorized" — revogado/expirado, provavelmente após recomendação de revogação de sessões anteriores); produção ainda na versão antiga; push no main não auto-deploya (integração GitHub→Vercel não configurada)
+
+Stage Summary:
+- Feature 100% pronta, testada e no GitHub (75bdb81); falta 1 passo: novo token Vercel do usuário (bunx vercel deploy --prod) OU configurar integração GitHub→Vercel (aí o push atual deploya sozinho)
+- e2e screenshots de evidência em download/e2e_*.png
+- Landing sem promessas financeiras/depoimentos inventados; offline e dashboard preservados
