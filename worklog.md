@@ -398,3 +398,18 @@ Stage Summary:
 - DEPLOY DESBLOQUEADO: integração Cakto 100% em produção (632e6b6 → dpl_HKjhyGUiomC2tgT2egTEAL2W311t READY)
 - Env vars configuradas na Vercel via API; /api/founders lendo a Cakto real com regra de carência ativa
 - Pendência pós-tarefa: ROTACIONAR tokens (GitHub PAT e token Vercel passaram pelo chat; secret Cakto idem em sessão anterior) — docs/CAKTO.md já documenta o procedimento
+
+---
+Task ID: 17-c
+Agent: Super Z (main agent)
+Task: Link 'Administração' no rodapé da landing (acesso ao painel /admin)
+
+Work Log:
+- Usuário não visualizava caminho para o /admin (desenhado sem link público por design); adicionado item visível na coluna 'Explorar' do rodapé da landing: <a href="/admin"> com ícone ShieldCheck, tooltip 'acesso restrito ao operador', mesma aba
+- Qualidade: tsc 0 erros, eslint limpo, 288 testes verdes (30+55+66+91+46), build local OK
+- Deploy e53af75 monitorado via API → READY
+- e2e produção (390×844): link presente no rodapé com texto 'Administração', href '/admin'; clique navega para /admin/login (307 de proteção intacto); zero erros de página
+- Screenshot: scripts/verify-admin-06-prod-footer-link.png
+
+Stage Summary:
+- Caminho para o painel agora descobrível pelo rodapé (discreto, com escudo); proteção do /admin inalterada (senha + 307)
