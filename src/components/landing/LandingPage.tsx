@@ -638,6 +638,17 @@ export function LandingPage({ onEnter, enterLabel = 'Começar gratuitamente', on
                     Privacidade e transparência
                   </button>
                 </li>
+                <li>
+                  <a
+                    href="/admin"
+                    className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-gold"
+                    aria-label="Abrir o painel de administração do projeto — acesso restrito ao operador"
+                    title="Painel de administração — acesso restrito ao operador"
+                  >
+                    <ShieldCheck className="h-4 w-4 text-gold" aria-hidden="true" />
+                    Administração
+                  </a>
+                </li>
               </ul>
             </nav>
 
