@@ -310,3 +310,26 @@ Stage Summary:
 - Commit cc6066e pushado main; produção atualizada nos dois domínios
 - 185 testes verdes, tsc/lint/build limpos
 - Novos artefatos: src/lib/outreach.ts, src/components/support/OutreachDialogs.tsx, scripts/test_outreach.ts, docs/SEGURANCA.md
+
+---
+Task ID: 15
+Agent: Super Z (main agent)
+Task: Pop-up de compartilhar (redes sociais), FAQ do método, botão compartilhar e consolidação de domínio ("criar outra conta")
+
+Work Log:
+- Verificado que o app NÃO reseta onboarded no mesmo domínio (e2e reload OK; setOnboarded(false) só no wipe destrutivo) — causa do "criar outra conta": dois domínios = origens com storage separado
+- middleware.ts: 308 de qualquer host não-canônico → diariodariqueza.vercel.app (preserva path/query; localhost excluído) — consolidará a origem daqui pra frente
+- src/lib/contact.ts: SHARE_URL (domínio canônico), SHARE_TEXT (versão discreta), SHARE_SUBJECT, SHARE_INTRO, METHOD_FAQ (2 Q&As do criador), buildShareTargets (6 intents testáveis)
+- src/lib/clipboard.ts: copyText extraído (PixSupportDialog e ShareDialog reutilizam)
+- src/lib/outreach.ts: refatorado para rotação — OutreachKind (support/share/site/method), OUTREACH_ORDER, OUTREACH_MAX_PER_SESSION=2, nextPopupDue (prioridade + exclude por sessão)
+- ShareDialog.tsx: navigator.share (menu nativo do dispositivo com todos os apps) + grade WhatsApp/Telegram/Facebook/X/LinkedIn/E-mail + copiar link; useSyncExternalStore para detecção sem hydration mismatch
+- OutreachDialogs.tsx: reescrito — 4 pop-ups em rotação com cadeia 20s (máx. 2/sessão); ação positiva (apoiar/compartilhar/visitar site) nunca empilha; botão "Compartilhar com os amigos" nos pop-ups de apoio e método
+- SupportSection.tsx: 3º card "Compartilhar com os amigos" (md:col-span-2) abrindo ShareDialog
+- test_outreach.ts: 64 testes (215 total com contact/seed/obsidian); lint (react-hooks: useSyncExternalStore no lugar de setState-em-effect), tsc, build OK
+- e2e local (390×844): apoio→share dialog OK (6 redes + noopener + botão nativo), copiar link OK, sem cadeia pós-ação positiva, método com FAQ OK → Pix OK, persistência pós-reload (sem popup, sem re-onboarding), card no dashboard OK, zero erros CSP
+- Produção (commit 2d5b29d, deploy automático): 308 do domínio antigo ativo, pop-up de apoio + botão compartilhar confirmados em diariodariqueza.vercel.app com storage semeado
+
+Stage Summary:
+- 4 pop-ups em ciclo respeitoso (7 dias cada, máx. 2 por sessão)
+- Compartilhamento: menu nativo + 6 redes + copiar link, sem rastreamento
+- Domínio consolidado (308); explicação sobre local-first/outro dispositivo a entregar ao usuário
