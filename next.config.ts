@@ -9,6 +9,17 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
+  async redirects() {
+    return [
+      {
+        // Atalho estável para a apresentação (landing page) — funciona também
+        // para usuários já onboardados, que normalmente entram direto no app.
+        source: "/landing",
+        destination: "/?apresentacao=1",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

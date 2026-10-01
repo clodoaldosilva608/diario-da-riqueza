@@ -64,6 +64,17 @@ export default function Home() {
     seedExampleData().catch((e) => console.error('Falha ao semear exemplos:', e));
   }, [hydrated, onboarded]);
 
+  // Atalho /?apresentacao=1 (redirect de /landing): reabre a apresentação para
+  // quem já está onboardado. Visitantes novos já veem a landing naturalmente.
+  // A URL é limpa em seguida para o parâmetro não reabrir a landing após o
+  // onboarding terminar.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('apresentacao') !== '1') return;
+    window.history.replaceState(null, '', window.location.pathname);
+    if (useAppStore.getState().onboarded) setLandingOpen(true);
+  }, [setLandingOpen]);
+
   if (!hydrated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
