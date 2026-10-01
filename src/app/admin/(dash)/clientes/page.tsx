@@ -1,11 +1,17 @@
 /**
- * /admin/clientes — compradores da conta Cakto, com busca.
+ * /admin/clientes — pessoas que apoiaram o Diário da Riqueza via Cakto.
+ *
+ * ESCOPO: somente clientes com pelo menos um pedido de produto deste
+ * projeto (clientes de outros apps da mesma conta ficam de fora — ver
+ * listDrCustomers). Busca e paginação em memória sobre o conjunto filtrado.
  */
 
-import { listCustomers } from '@/lib/cakto-server';
+import { listDrCustomers } from '@/lib/cakto-server';
 import { CaktoError, DateTime, Pager, SearchForm, Td } from '../ui';
 
 export const dynamic = 'force-dynamic';
+
+const PAGE_SIZE = 20;
 
 export default async function AdminCustomersPage({
   searchParams,
@@ -16,20 +22,25 @@ export default async function AdminCustomersPage({
   const page = Math.max(1, Number(pageStr ?? '1') || 1);
   const search = (q ?? '').trim();
 
-  let data: Awaited<ReturnType<typeof listCustomers>> | null = null;
+  let data: Awaited<ReturnType<typeof listDrCustomers>> | null = null;
   let error: unknown = null;
   try {
-    data = await listCustomers(page, 20, search);
+    data = await listDrCustomers(search);
   } catch (e) {
     error = e;
   }
+
+  const total = data?.data.length ?? 0;
+  const start = (page - 1) * PAGE_SIZE;
+  const rows = data?.data.slice(start, start + PAGE_SIZE) ?? [];
+  const hasMore = start + PAGE_SIZE < total;
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl font-bold">Clientes</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Pessoas que apoiaram o projeto via checkout da Cakto.
+          Pessoas que apoiaram o Diário da Riqueza via checkout da Cakto.
         </p>
       </div>
 
@@ -55,14 +66,14 @@ export default async function AdminCustomersPage({
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {!data || data.data.length === 0 ? (
+                {!rows || rows.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="px-4 py-10 text-center text-muted-foreground">
                       Nenhum cliente ainda — os apoios criam o cadastro automaticamente.
                     </td>
                   </tr>
                 ) : (
-                  data.data.map((c, i) => (
+                  rows.map((c, i) => (
                     <tr key={c.id ?? i} className="hover:bg-muted/30">
                       <Td className="font-semibold">{c.name ?? '—'}</Td>
                       <Td className="text-muted-foreground">{c.email ?? '—'}</Td>
@@ -81,11 +92,11 @@ export default async function AdminCustomersPage({
               </tbody>
             </table>
           </div>
-          {data && data.data.length > 0 ? (
+          {rows.length > 0 ? (
             <Pager
               base={`/admin/clientes${search ? `?q=${encodeURIComponent(search)}` : ''}`}
               page={page}
-              hasMore={data.hasMore}
+              hasMore={hasMore}
             />
           ) : null}
         </>

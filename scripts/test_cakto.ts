@@ -24,9 +24,9 @@ function check(name: string, cond: boolean) {
 import {
   CAKTO_CHECKOUT_HOST, CAKTO_FOUNDER_CHECKOUT_URL, CAKTO_FOUNDER_PRICE,
   CAKTO_OFFER_FOUNDER, CAKTO_PRODUCT_FOUNDER_ID, CAKTO_TIERS,
-  FOUNDER_GRACE_MS, caktoCheckoutUrl, formatSince, formatSupporterName,
-  founderEligible, initialsOf, isCaktoCheckoutUrl, looksLikeCaktoEvent,
-  tierCheckoutUrl,
+  FOUNDER_GRACE_MS, caktoCheckoutUrl, caktoProductIdOf, formatSince,
+  formatSupporterName, founderEligible, initialsOf, isCaktoCheckoutUrl,
+  isDrProductId, isDrProductName, looksLikeCaktoEvent, tierCheckoutUrl,
 } from '../src/lib/cakto';
 
 /* ============================== TIERS / URLS ============================== */
@@ -97,6 +97,22 @@ check('sem event → inválido', looksLikeCaktoEvent({ data: {} }) === false);
 check('sem data → inválido', looksLikeCaktoEvent({ event: 'x' }) === false);
 check('não-objeto → inválido', looksLikeCaktoEvent('teste') === false);
 check('null → inválido', looksLikeCaktoEvent(null) === false);
+
+/* ============================== ESCOPO DR ============================== */
+
+console.log('== Escopo: somente produtos do Diário da Riqueza ==');
+check('isDrProductId aceita id do fundador', isDrProductId(CAKTO_PRODUCT_FOUNDER_ID));
+check('isDrProductId rejeita id desconhecido', !isDrProductId('b6fa67da-2b49-4611-a73c-fb9751d28e98'));
+check('isDrProductId rejeita não-string', !isDrProductId(123) && !isDrProductId(null) && !isDrProductId(undefined));
+check('isDrProductName cobre nome com acento', isDrProductName('Apoiador Fundador — Diário da Riqueza'));
+check('isDrProductName cobre sem acento', isDrProductName('Diario da Riqueza — Apoio'));
+check('isDrProductName rejeita outros apps', !isDrProductName('Destrava') && !isDrProductName('ResíduoZero PRO') && !isDrProductName('PsicoRisk'));
+check('isDrProductName rejeita não-string', !isDrProductName(undefined) && !isDrProductName(42));
+check('caktoProductIdOf extrai de objeto', caktoProductIdOf({ id: 'abc', name: 'X' }) === 'abc');
+check('caktoProductIdOf aceita string', caktoProductIdOf('uuid-1') === 'uuid-1');
+check('caktoProductIdOf rejeita vazio/objeto sem id', caktoProductIdOf('') === null && caktoProductIdOf({}) === null && caktoProductIdOf(undefined) === null);
+check('pedido de outro app é reconhecível como fora', !isDrProductId(caktoProductIdOf({ id: 'b6fa67da-2b49-4611-a73c-fb9751d28e98' })));
+check('pedido DR (product objeto) é reconhecível como dentro', isDrProductId(caktoProductIdOf({ id: CAKTO_PRODUCT_FOUNDER_ID })));
 
 /* ============================== RESULTADO ============================== */
 

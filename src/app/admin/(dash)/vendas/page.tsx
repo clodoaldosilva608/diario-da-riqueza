@@ -1,13 +1,19 @@
 /**
- * /admin/vendas — pedidos da conta Cakto com busca e paginação.
+ * /admin/vendas — pedidos do Diário da Riqueza com busca e paginação.
+ *
+ * ESCOPO: somente pedidos de produtos deste projeto (outros apps da mesma
+ * conta Cakto ficam de fora — ver listDrOrders). Busca e paginação são
+ * aplicadas em memória sobre a janela filtrada (até 500 pedidos).
  */
 
-import { listOrders } from '@/lib/cakto-server';
+import { listDrOrders } from '@/lib/cakto-server';
 import {
   AdminTable, BRL, CaktoError, DateTime, Pager, SearchForm, StatusBadge, Td,
 } from '../ui';
 
 export const dynamic = 'force-dynamic';
+
+const PAGE_SIZE = 20;
 
 export default async function AdminOrdersPage({
   searchParams,
@@ -18,20 +24,40 @@ export default async function AdminOrdersPage({
   const page = Math.max(1, Number(pageStr ?? '1') || 1);
   const search = (q ?? '').trim();
 
-  let data: Awaited<ReturnType<typeof listOrders>> | null = null;
+  let all: Awaited<ReturnType<typeof listDrOrders>>['data'] = [];
   let error: unknown = null;
   try {
-    data = await listOrders(page, 20, search);
+    const res = await listDrOrders();
+    all = res.data;
+    if (search) {
+      const needle = search.toLowerCase();
+      all = all.filter((o) => {
+        const name =
+          typeof o.customer === 'object' ? o.customer?.name : o.customer;
+        const email =
+          typeof o.customer === 'object' ? o.customer?.email : '';
+        const pname =
+          typeof o.product === 'object' ? o.product?.name : o.product;
+        return [o.refId, o.id, name, email, pname]
+          .some((v) => typeof v === 'string' && v.toLowerCase().includes(needle));
+      });
+    }
   } catch (e) {
     error = e;
   }
+
+  const total = all.length;
+  const start = (page - 1) * PAGE_SIZE;
+  const rows = all.slice(start, start + PAGE_SIZE);
+  const hasMore = start + PAGE_SIZE < total;
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl font-bold">Vendas</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Todos os pedidos processados pela Cakto — apoios únicos e renovações.
+          Pedidos dos produtos do Diário da Riqueza — apoios únicos e
+          renovações. Pedidos de outros apps da conta não aparecem aqui.
         </p>
       </div>
 
@@ -47,9 +73,9 @@ export default async function AdminOrdersPage({
         <>
           <AdminTable
             headers={['Pedido', 'Cliente', 'Produto', 'Valor', 'Parc.', 'Método', 'Status', 'Data']}
-            empty={!data || data.data.length === 0}
+            empty={rows.length === 0}
           >
-            {data?.data.map((o, i) => {
+            {rows.map((o, i) => {
               const name =
                 typeof o.customer === 'object' ? o.customer?.name : o.customer;
               const pname =
@@ -70,11 +96,11 @@ export default async function AdminOrdersPage({
               );
             })}
           </AdminTable>
-          {data && data.data.length > 0 ? (
+          {rows.length > 0 ? (
             <Pager
               base={`/admin/vendas${search ? `?q=${encodeURIComponent(search)}` : ''}`}
               page={page}
-              hasMore={data.hasMore}
+              hasMore={hasMore}
             />
           ) : null}
         </>

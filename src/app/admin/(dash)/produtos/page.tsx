@@ -1,5 +1,8 @@
 /**
- * /admin/produtos — catálogo da conta Cakto (leitura + link de checkout).
+ * /admin/produtos — catálogo do Diário da Riqueza na Cakto (leitura + link).
+ *
+ * ESCOPO: somente produtos deste projeto (os demais produtos da conta —
+ * outros apps do criador — ficam de fora; ver listDrProducts).
  *
  * Edição de produtos no v1 é propositalmente SOMENTE LEITURA: preço/nome
  * afetam vendas em produção e o painel do criador da Cakto continua sendo
@@ -7,16 +10,16 @@
  * status, preços e links públicos de checkout.
  */
 
-import { listProducts } from '@/lib/cakto-server';
+import { listDrProducts } from '@/lib/cakto-server';
 import { BRL, CaktoError, StatusBadge, Td } from '../ui';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminProductsPage() {
-  let data: Awaited<ReturnType<typeof listProducts>> | null = null;
+  let data: Awaited<ReturnType<typeof listDrProducts>> | null = null;
   let error: unknown = null;
   try {
-    data = await listProducts(1, 50);
+    data = await listDrProducts();
   } catch (e) {
     error = e;
   }
@@ -26,8 +29,10 @@ export default async function AdminProductsPage() {
       <div>
         <h1 className="font-display text-2xl font-bold">Produtos</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Catálogo completo da conta (inclui outros projetos). Alterações
-          estruturais continuam no painel da Cakto — aqui é leitura e conferência.
+          Catálogo do Diário da Riqueza na Cakto — os outros produtos da
+          conta (Destrava, ResíduoZero, PsicoRisk e afins) não aparecem
+          aqui. Alterações estruturais continuam no painel da Cakto — aqui é
+          leitura e conferência.
         </p>
       </div>
 
@@ -49,7 +54,7 @@ export default async function AdminProductsPage() {
               {!data || data.data.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
-                    Nenhum produto na conta.
+                    Nenhum produto do projeto na conta.
                   </td>
                 </tr>
               ) : (

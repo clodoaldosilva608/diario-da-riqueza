@@ -18,8 +18,9 @@
  */
 
 import {
-  CAKTO_PRODUCT_FOUNDER_ID,
-  FounderEntry, formatSince, formatSupporterName, founderEligible,
+  CAKTO_PRODUCT_FOUNDER_ID, FounderEntry, formatSince,
+  formatSupporterName, founderEligible, caktoProductIdOf, isDrProductId,
+  isDrProductName,
 } from './cakto';
 
 const CAKTO_API_BASE = 'https://api.cakto.com.br';
@@ -403,4 +404,134 @@ export async function cancelSubscription(id: string): Promise<boolean> {
     { method: 'POST' },
   );
   return Boolean(res);
+}
+
+/* ====================== ESCOPO DR (painel /admin) ======================
+ *
+ * A conta Cakto contém produtos de OUTROS apps do criador. O painel deve
+ * gerenciar SOMENTE o Diário da Riqueza: as funções abaixo junta páginas,
+ * filtra por produto do projeto e cacheia — páginas do admin consomem
+ * apenas estas versões com escopo.
+ */
+
+/** Produto pertence ao projeto? (ID conhecido OU nome do projeto) */
+export function isDrProduct(p: CaktoProduct): boolean {
+  return isDrProductId(p.id) || isDrProductName(p.name);
+}
+
+/** Pedido pertence a um produto do projeto? (estrito: desconhecido = fora) */
+export function isDrOrder(o: CaktoOrder): boolean {
+  return isDrProductId(caktoProductIdOf(o.product));
+}
+
+/** Assinatura pertence a um produto do projeto? */
+export function isDrSubscription(s: CaktoSubscription): boolean {
+  return isDrProductId(s.product);
+}
+
+/** Webhook vinculado ao projeto? (global sem `products` OU cita produto DR) */
+export function isDrWebhook(w: CaktoWebhook): boolean {
+  const products = w.products;
+  if (!Array.isArray(products) || products.length === 0) return true;
+  return products.some((pid) => isDrProductId(pid));
+}
+
+/** Junta todas as páginas de uma listagem (limite de segurança de páginas) */
+async function collectAll<T>(
+  fetchPage: (page: number) => Promise<CaktoList<T>>,
+  maxPages = 10,
+): Promise<T[]> {
+  const all: T[] = [];
+  let page = 1;
+  let hasMore = true;
+  while (hasMore && page <= maxPages) {
+    const res = await fetchPage(page);
+    all.push(...res.data);
+    hasMore = res.hasMore;
+    page += 1;
+  }
+  return all;
+}
+
+/** Produtos SOMENTE do projeto (catálogo completo, cacheado) */
+export async function listDrProducts(): Promise<CaktoList<CaktoProduct>> {
+  return cached(
+    'dr:products', 5 * 60_000, 30 * 60_000,
+    async () => {
+      const all = await collectAll((p) => listProducts(p, 50), 5);
+      const data = all.filter(isDrProduct);
+      return { data, page: 1, pageSize: data.length, total: data.length, hasMore: false };
+    },
+  );
+}
+
+/** Assinaturas SOMENTE do projeto (até 500, cacheado) */
+export async function listDrSubscriptions(): Promise<CaktoList<CaktoSubscription>> {
+  return cached(
+    'dr:subs', 3 * 60_000, 15 * 60_000,
+    async () => {
+      const all = await collectAll((p) => listSubscriptions(p, 50));
+      const data = all.filter(isDrSubscription);
+      return { data, page: 1, pageSize: data.length, total: data.length, hasMore: false };
+    },
+  );
+}
+
+/** Pedidos SOMENTE do projeto (janela recente até 500, cacheado) */
+export async function listDrOrders(): Promise<CaktoList<CaktoOrder>> {
+  return cached(
+    'dr:orders', 60_000, 10 * 60_000,
+    async () => {
+      const all = await collectAll((p) => listOrders(p, 50));
+      const data = all.filter(isDrOrder);
+      return { data, page: 1, pageSize: data.length, total: data.length, hasMore: false };
+    },
+  );
+}
+
+/**
+ * IDs dos clientes que já apoiaram o projeto (deduzidos dos pedidos DR).
+ * Clientes da conta que só compraram em outros apps ficam de fora.
+ */
+export async function drCustomerIds(): Promise<Set<string>> {
+  return cached(
+    'dr:customer-ids', 60_000, 10 * 60_000,
+    async () => {
+      const orders = await listDrOrders();
+      const ids = new Set<string>();
+      for (const o of orders.data) {
+        const c = o.customer;
+        if (typeof c === 'string' && c) {
+          ids.add(c);
+        } else if (typeof c === 'object' && c !== null) {
+          const id = (c as { id?: unknown }).id;
+          if (typeof id === 'string' && id) ids.add(id);
+        }
+      }
+      return ids;
+    },
+  );
+}
+
+/** Clientes do projeto (compraram produto DR), com busca em memória */
+export async function listDrCustomers(
+  search = '',
+): Promise<CaktoList<CaktoCustomer>> {
+  return cached(
+    `dr:customers:${search}`, 60_000, 10 * 60_000,
+    async () => {
+      const drIds = await drCustomerIds();
+      const all = await collectAll((p) => listCustomers(p, 50));
+      const needle = search.trim().toLowerCase();
+      let data = all.filter((c) => drIds.has(c.id));
+      if (needle) {
+        data = data.filter(
+          (c) =>
+            (c.name ?? '').toLowerCase().includes(needle) ||
+            (c.email ?? '').toLowerCase().includes(needle),
+        );
+      }
+      return { data, page: 1, pageSize: data.length, total: data.length, hasMore: false };
+    },
+  );
 }

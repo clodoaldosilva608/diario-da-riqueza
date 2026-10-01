@@ -1,12 +1,15 @@
 /**
- * /admin/webhooks — webhooks registrados na Cakto e histórico de eventos.
+ * /admin/webhooks — webhooks do Diário da Riqueza registrados na Cakto.
+ *
+ * ESCOPO: somente webhooks vinculados a produtos deste projeto (ou globais,
+ * sem restrição de produto). Webhooks de outros apps ficam de fora.
  *
  * Ação disponível: reenviar/testar evento (webhook_event_test) — dispara
  * um evento de teste para a URL registrada e permite validar a integração
  * com /api/cakto/webhook desta aplicação.
  */
 
-import { listWebhooks } from '@/lib/cakto-server';
+import { listWebhooks, isDrWebhook } from '@/lib/cakto-server';
 import { CAKTO_WEBHOOK_EVENTS } from '@/lib/cakto';
 import { CaktoError, DateTime, StatusBadge, Td } from '../ui';
 
@@ -16,7 +19,8 @@ export default async function AdminWebhooksPage() {
   let data: Awaited<ReturnType<typeof listWebhooks>> | null = null;
   let error: unknown = null;
   try {
-    data = await listWebhooks(1, 20);
+    const res = await listWebhooks(1, 20);
+    data = { ...res, data: res.data.filter(isDrWebhook) };
   } catch (e) {
     error = e;
   }

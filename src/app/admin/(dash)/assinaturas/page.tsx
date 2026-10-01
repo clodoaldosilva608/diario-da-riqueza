@@ -1,13 +1,17 @@
 /**
- * /admin/assinaturas — assinaturas recorrentes com filtro de status e
- * ação de cancelamento (com confirmação explícita no cliente).
+ * /admin/assinaturas — assinaturas do Diário da Riqueza com filtro de
+ * status e ação de cancelamento (com confirmação explícita no cliente).
+ *
+ * ESCOPO: somente assinaturas de produtos deste projeto — a assinatura
+ * "Apoiador Fundador" e futuras recorrências do DR. Assinaturas de outros
+ * apps da mesma conta Cakto (ResíduoZero, PsicoRisk...) ficam de fora.
  *
  * Observação de design: o cancelamento é uma ação IRREVERSÍVEL na Cakto;
  * o botão usa confirm() nativo antes de submeter o form para a server action.
  */
 
-import { listSubscriptions } from '@/lib/cakto-server';
-import { BRL, CaktoError, DateTime, Pager, StatusBadge, Td } from '../ui';
+import { listDrSubscriptions } from '@/lib/cakto-server';
+import { CaktoError, DateTime, StatusBadge, Td } from '../ui';
 import { cancelSubscriptionAction } from '../../actions';
 
 export const dynamic = 'force-dynamic';
@@ -24,30 +28,28 @@ const STATUSES = [
 export default async function AdminSubscriptionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; status?: string; ok?: string; erro?: string }>;
+  searchParams: Promise<{ status?: string; ok?: string; erro?: string }>;
 }) {
-  const { page: pageStr, status = '', ok, erro } = await searchParams;
-  const page = Math.max(1, Number(pageStr ?? '1') || 1);
+  const { status = '', ok, erro } = await searchParams;
 
-  let data: Awaited<ReturnType<typeof listSubscriptions>> | null = null;
+  let rows: Awaited<ReturnType<typeof listDrSubscriptions>>['data'] = [];
   let error: unknown = null;
   try {
-    const res = await listSubscriptions(page, 20);
-    const filtered = status
+    const res = await listDrSubscriptions();
+    rows = status
       ? res.data.filter((s) => s.status === status)
       : res.data;
-    data = { ...res, data: filtered, hasMore: res.hasMore && !status };
   } catch (e) {
     error = e;
   }
-
-  // Preços por oferta (para exibir valor mensal) — melhor esforço
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl font-bold">Assinaturas</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Recorrências ativas e históricas — inclui os Apoiadores Fundadores.
+          Recorrências dos produtos do Diário da Riqueza — inclui os
+          Apoiadores Fundadores. Assinaturas de outros apps da conta não
+          aparecem aqui.
         </p>
       </div>
 
@@ -97,14 +99,14 @@ export default async function AdminSubscriptionsPage({
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {!data || data.data.length === 0 ? (
+                {!rows || rows.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
                       Nenhuma assinatura{status ? ` com status "${status}"` : ''} ainda.
                     </td>
                   </tr>
                 ) : (
-                  data.data.map((s, i) => (
+                  rows.map((s, i) => (
                     <tr key={s.id ?? i} className="hover:bg-muted/30">
                       <Td className="font-mono text-xs">{String(s.id ?? '—')}</Td>
                       <Td>
@@ -155,9 +157,6 @@ export default async function AdminSubscriptionsPage({
               </tbody>
             </table>
           </div>
-          {data && data.data.length > 0 && !status ? (
-            <Pager base="/admin/assinaturas" page={page} hasMore={data.hasMore} />
-          ) : null}
         </>
       )}
     </div>

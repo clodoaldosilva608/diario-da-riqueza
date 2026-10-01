@@ -46,6 +46,40 @@ export const CAKTO_PRODUCT_IDS = [
   CAKTO_PRODUCT_50_ID, CAKTO_PRODUCT_FOUNDER_ID,
 ] as const;
 
+/* ====================== ESCOPO: PRODUTOS DO PROJETO ====================== */
+
+/**
+ * A conta Cakto também contém produtos de OUTROS apps do criador
+ * (Destrava, ResíduoZero, PsicoRisk...). Todo dado do painel /admin e das
+ * APIs deste projeto é filtrado para incluir SOMENTE produtos do Diário da
+ * Riqueza — por ID conhecido ou pelo nome do produto.
+ */
+
+/** O id pertence a um produto do projeto? */
+export function isDrProductId(id: unknown): boolean {
+  return (
+    typeof id === 'string' &&
+    (CAKTO_PRODUCT_IDS as readonly string[]).includes(id)
+  );
+}
+
+/** Nome de produto pertence ao projeto? (cobre futuros produtos do DR) */
+export function isDrProductName(name: unknown): boolean {
+  return typeof name === 'string' && /di[aá]rio da riqueza/i.test(name);
+}
+
+/**
+ * Extrai o id de produto de um pedido/assinatura da Cakto — o campo
+ * `product` chega como UUID string ou como objeto {id, name}.
+ */
+export function caktoProductIdOf(product: unknown): string | null {
+  if (typeof product === 'object' && product !== null) {
+    const id = (product as { id?: unknown }).id;
+    return typeof id === 'string' && id ? id : null;
+  }
+  return typeof product === 'string' && product ? product : null;
+}
+
 /* ============================== TIERS DE APOIO ============================== */
 
 export interface CaktoTier {

@@ -1,27 +1,31 @@
 /**
- * /admin — Dashboard: visão geral do negócio via API Cakto.
+ * /admin — Dashboard: visão geral do projeto via API Cakto.
+ *
+ * ESCOPO: SOMENTE produtos do Diário da Riqueza (pedidos, assinaturas e
+ * clientes de outros apps da mesma conta Cakto ficam de fora — ver
+ * listDrOrders/listDrSubscriptions/listDrCustomers).
  *
  * Métricas agregadas de forma HONESTA (rótulos dizem de onde vêm):
- * - Saldo Cakto (disponível/a receber) — endpoint de saldo
- * - Assinaturas por status — contagem na listagem completa (até 500)
+ * - Saldo Cakto (disponível/a receber) — endpoint de saldo (conta)
+ * - Assinaturas por status — só assinaturas de produtos do projeto
  * - Fundadores ativos — regra do mural (getFounders)
- * - Clientes — total da conta
- * - Receita aprovada — soma das últimas 250 vendas (janela visível)
- * - Últimas vendas — 8 mais recentes
+ * - Clientes — compradores de produtos do projeto
+ * - Receita aprovada — soma dos pedidos aprovados do projeto (janela 500)
+ * - Últimas vendas — 8 mais recentes do projeto
  */
 
 import {
-  listCustomers, listOrders, listSubscriptions, getBalance, getFounders,
-  CaktoApiError, CaktoList, CaktoOrder, CaktoSubscription,
+  listDrOrders, listDrSubscriptions, listDrCustomers,
+  getBalance, getFounders,
+  CaktoApiError,
 } from '@/lib/cakto-server';
-import { CAKTO_PRODUCT_IDS } from '@/lib/cakto';
 import {
   AdminTable, BRL, CaktoError, DateTime, MetricCard, StatusBadge, Td,
 } from './ui';
 
 export const dynamic = 'force-dynamic';
 
-const EMPTY_ORDERS: CaktoList<CaktoOrder> = {
+const EMPTY_ORDERS: Awaited<ReturnType<typeof listDrOrders>> = {
   data: [], page: 1, pageSize: 0, total: 0, hasMore: false,
 };
 
@@ -38,7 +42,7 @@ export default async function AdminDashboardPage() {
   let loadError: unknown = null;
   try {
     // Dispara token cedo para falhar rápido se não configurado
-    await listSubscriptions(1, 1);
+    await listDrSubscriptions();
   } catch (e) {
     loadError = e;
   }
@@ -52,38 +56,19 @@ export default async function AdminDashboardPage() {
     );
   }
 
-  const [balance, subsPages, ordersRecent, customersFirst, founders] =
+  const [balance, drSubs, drOrders, drCustomers, founders] =
     await Promise.all([
       getBalance(),
-      // Até 10 páginas × 50 = até 500 assinaturas para agregar status
-      (async () => {
-        const pages: CaktoSubscription[] = [];
-        let page = 1;
-        let hasMore = true;
-        while (hasMore && page <= 10) {
-          const res = await listSubscriptions(page, 50);
-          pages.push(...res.data);
-          hasMore = res.hasMore;
-          page += 1;
-        }
-        return pages;
-      })(),
-      safe(() => listOrders(1, 50), EMPTY_ORDERS),
-      safe(() => listCustomers(1, 1), null),
+      safe(() => listDrSubscriptions(), {
+        data: [], page: 1, pageSize: 0, total: 0, hasMore: false,
+      }),
+      safe(() => listDrOrders(), EMPTY_ORDERS),
+      safe(() => listDrCustomers(), null),
       safe(() => getFounders(Date.now()), []),
     ]);
 
-  // Vendas: junta até 5 páginas (250 pedidos) para métricas de janela
-  const orders = [...ordersRecent.data];
-  if (ordersRecent.hasMore) {
-    for (let p = 2; p <= 5; p++) {
-      const res = await safe(() => listOrders(p, 50), EMPTY_ORDERS);
-      orders.push(...res.data);
-      if (!res.hasMore) break;
-    }
-  }
-
-  const byStatus = subsPages.reduce<Record<string, number>>((acc, s) => {
+  const orders = drOrders.data;
+  const byStatus = drSubs.data.reduce<Record<string, number>>((acc, s) => {
     const k = s.status ?? '—';
     acc[k] = (acc[k] ?? 0) + 1;
     return acc;
@@ -91,13 +76,7 @@ export default async function AdminDashboardPage() {
   const activeSubs = byStatus.active ?? 0;
   const lateSubs = byStatus.late ?? 0;
 
-  const isProject = (o: (typeof orders)[number]) => {
-    const pid = typeof o.product === 'object' ? o.product?.id : o.product;
-    return !pid || (CAKTO_PRODUCT_IDS as readonly string[]).includes(pid);
-  };
-  const approved = orders.filter(
-    (o) => o.status === 'approved' && isProject(o),
-  );
+  const approved = orders.filter((o) => o.status === 'approved');
   const approvedSum = approved.reduce(
     (sum, o) => sum + Number(o.amount ?? o.baseAmount ?? 0),
     0,
@@ -115,8 +94,9 @@ export default async function AdminDashboardPage() {
       <div>
         <h1 className="font-display text-2xl font-bold">Dashboard</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Visão geral do apoio ao projeto — dados ao vivo da Cakto (cache de
-          alguns segundos a minutos).
+          Visão geral do apoio ao projeto — dados ao vivo da Cakto, apenas
+          dos produtos do Diário da Riqueza (outros apps da conta ficam de
+          fora). Cache de alguns segundos a minutos.
         </p>
       </div>
 
@@ -139,14 +119,14 @@ export default async function AdminDashboardPage() {
         />
         <MetricCard
           label="Clientes"
-          value={customersFirst ? String(customersFirst.total) : '—'}
-          hint="compradores na Cakto"
+          value={drCustomers ? String(drCustomers.total) : '—'}
+          hint="apoiadores dos produtos do projeto"
         />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <MetricCard
-          label="Receita aprovada (últimas 250 vendas)"
+          label="Receita aprovada (janela do projeto)"
           value={BRL(approvedSum)}
           hint={`${approved.length} vendas aprovadas na janela`}
         />
