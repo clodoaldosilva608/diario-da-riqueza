@@ -222,3 +222,23 @@ Stage Summary:
 - PRODUÇÃO ATUALIZADA: https://diario-da-riqueza.vercel.app (landing + /landing + suporte no dashboard)
 - URL direta/compartilhável da apresentação: https://diario-da-riqueza.vercel.app/landing
 - Pendente: revogar AMBOS os tokens expostos no chat após uso; integração GitHub→Vercel ainda não configurada (auto-deploy exige conexão no dashboard)
+
+---
+Task ID: 11
+Agent: Super Z (main agent)
+Task: QR Code Pix no modal de apoio — usuário enviou o BR Code oficial do banco
+
+Work Log:
+- Payload fornecido pelo usuário validado campo a campo (TLV EMV íntegro): chave UUID bde7ca55…, recebedor "Clodoaldo Conceicao Silva", cidade SAO PAULO, BRL 986, CRC16 recalculado 4614 == embarcado
+- scripts/generate_pix_qr.py: valida payload + gera QR localmente (qrcode lib, correção Q, 780x780) + verifica por decodificação OpenCV == payload exato; saída src/components/support/pix-qr.png (asset estático importado → hash → cache-first no SW → offline)
+- contact.ts: PIX_BR_CODE (payload exato) + PIX_RECEIVER_NAME; nada de valor/cobrança (QR estático, valor livre)
+- PixSupportDialog: QR em card branco (196px), "Copiar código Pix (copia e cola)" (feedback "Código Pix copiado" + toast + aria-live), estado copied: 'key'|'code'|null, instruções QR/copia-e-cola, "Recebedor: …" para conferência, cabeçalho de segurança atualizado
+- test_contact.ts: seção [4] com 10 novos testes (CRC16 revalidado em TS contra edições acidentais, TLV, ASCII, campos); 30/30 contact + 55/55 seed + 66/66 obsidian; tsc limpo; ESLint limpo; build OK
+- e2e local + produção: QR renderiza (780x780), ambos os botões copiam com feedback, console sem erros; screenshots download/e2e_pix_qr_modal*.png e e2e_pix_qr_producao.png
+- Git: commit 3ba7fea push main; deploy Vercel --prod OK (mesmo token vcp_)
+- Prova final: PNG baixado da produção decodificado via OpenCV = payload exato com CRC 4614 no final
+
+Stage Summary:
+- Produção com QR Code Pix real, válido e testado: https://diario-da-riqueza.vercel.app
+- QR estático offline (sem serviço externo); chave telefone mantida como alternativa
+- Lembrete contínuo: revogar os tokens GitHub/Vercel compartilhados no chat
