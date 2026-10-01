@@ -352,3 +352,26 @@ Stage Summary:
 - Task 15-b (seção do criador + redes + pop-up seguir) confirmado COMPLETO e EM PRODUÇÃO (cddadd8 + bc5260c enviados)
 - 242 testes verdes, tsc/lint limpos, e2e de produção validado em mobile
 - Pendências herdadas intactas: nenhuma bloqueante; bugs de conta-duplicada já explicados no Task 15 (dois domínios, consolidado via 308)
+
+---
+Task ID: 17
+Agent: Super Z (main agent)
+Task: Integração Cakto (apoio fixo + fundador), Mural dos Fundadores e painel /admin
+
+Work Log:
+- Mapeado CaktoMCP (8 tools) + API pública: 62 endpoints; produção com escopos read/write completos; descobertas: taxa Pix R$2,49 fixa, checkout hospedado sem "valor livre" (mantido Pix direto), paginação com page+limit, token via POST /public_api/token/ (form-urlencoded)
+- Criados 4 produtos na conta Cakto (produção): Apoio mínimo R$5 (xear8ps), R$15 (3doo9ob), R$50 (3a8wteb), Apoiador Fundador R$9,90/mês (7utmjxk) — checkouts HTTP 200 validados
+- src/lib/cakto.ts (client-safe): tiers, URLs, formatSupporterName ("Nome S."), initialsOf, founderEligible (regra: active ok; late com carência 7d; paused/canceled/expired/inactive fora), FOUNDER_GRACE_MS, guard isCaktoCheckoutUrl
+- src/lib/cakto-server.ts (server-only): OAuth2 client_credentials com cache, caktoList (page+limit), getFounders (junta páginas, resolve cliente via customers_retrieve, aplica regra), listOrders/listCustomers/listProducts/listWebhooks/getBalance/cancelSubscription, cache SWR em memória
+- /api/founders (público, cache CDN s-maxage=300) + /api/cakto/webhook (token tempo constante, log estruturado, Fase 2 = banco)
+- Landing: nova seção #apoio (3 tiers + fundador + Pix livre) e #fundadores (Mural dos Fundadores com skeletons/estado vazio/CTA); PixSupportDialog agora central (valores fixos em cima, Pix valor livre embaixo); OutreachDialogs botão renomeado "Apoiar o projeto"
+- Admin desacoplado: /admin/login (senha server-side, fail-closed), (dash)/layout com requireAdmin + cookie HMAC 8h httpOnly; páginas Dashboard (métricas ao vivo da Cakto), Vendas, Assinaturas (cancelar c/ confirm), Fundadores (situação da regra), Clientes, Produtos, Webhooks
+- robots.txt: Disallow /admin e /api; .env.local com CAKTO_* + ADMIN_PASSWORD + ADMIN_SESSION_SECRET + CAKTO_WEBHOOK_TOKEN (gitignored)
+- Webhook registrado na Cakto (id 71368, active, 11 eventos, 4 produtos)
+- e2e local: login admin OK, dashboard com dados reais (saldo R$0, produtos listados), seções da landing + modal validados, 288 testes (46 novos), tsc/lint/build limpos
+- ⚠️ DEPLOY BLOQUEADO: 3 pushes sem subir para produção (404 nas rotas novas; build antigo ainda no ar). Local OK; lockfile OK; server-only adicionado como dep explícita. Causa indeterminada sem acesso aos logs da Vercel
+
+Stage Summary:
+- Integração 100% pronta localmente + produtos/webhook configurados na Cakto (produção)
+- Pendente: diagnóstico do build Vercel (usuário: dashboard → Deployments → logs) + adicionar 5 env vars (CAKTO_CLIENT_ID/SECRET, CAKTO_WEBHOOK_TOKEN, ADMIN_PASSWORD, ADMIN_SESSION_SECRET) no projeto Vercel
+- docs/CAKTO.md documenta tudo (arquitetura, regras, env vars, rotação de segredos, limitações)
