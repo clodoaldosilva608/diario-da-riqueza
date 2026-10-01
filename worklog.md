@@ -375,3 +375,26 @@ Stage Summary:
 - Integração 100% pronta localmente + produtos/webhook configurados na Cakto (produção)
 - Pendente: diagnóstico do build Vercel (usuário: dashboard → Deployments → logs) + adicionar 5 env vars (CAKTO_CLIENT_ID/SECRET, CAKTO_WEBHOOK_TOKEN, ADMIN_PASSWORD, ADMIN_SESSION_SECRET) no projeto Vercel
 - docs/CAKTO.md documenta tudo (arquitetura, regras, env vars, rotação de segredos, limitações)
+
+---
+Task ID: 17-b
+Agent: Super Z (main agent)
+Task: Desbloqueio do deploy Cakto (diagnóstico via API Vercel) + env vars + verificação e2e de produção
+
+Work Log:
+- Token Vercel fornecido pelo usuário validado via /v2/user (clodoaldosilva608, team team_iylYgr5VwMOCi7FtolZSwtcO)
+- Causa raiz dos 4 deploys ERROR encontrada nos logs de build (API /v2/deployments/{id}/events): Turbopack "Module not found: '@/lib/admin-auth'" — o arquivo foi commitado somente no checkpoint local 0f0368e (não pushado), enquanto o build clonava 8b9d111 (worklog Task 17, sem o módulo)
+- 5 env vars configuradas no projeto Vercel via API (v10/projects/{id}/env, targets production+preview+development): CAKTO_CLIENT_ID, CAKTO_CLIENT_SECRET, CAKTO_WEBHOOK_TOKEN, ADMIN_PASSWORD, ADMIN_SESSION_SECRET — valores lidos de .env.local por scripts/vercel_env_setup.py (nunca ecoados no output; script sem segredos hardcoded, comitável)
+- Commit local 0f0368e amendado com mensagem descritiva → 632e6b6 "fix(cakto): inclui src/lib/admin-auth.ts..." pushado a origin/main
+- Deploy automático monitorado via API: dpl_HKjhyGUiomC2tgT2egTEAL2W311t BUILDING → READY em ~45s
+- Produção verificada por HTTP: / 200, /api/founders 200 {"configured":true,"graceDays":7,"founders":[]}, /admin/login 200, /admin 307→/admin/login, robots.txt com Disallow /admin e /api/
+- Bundle de produção contém os 4 IDs de produto (xear8ps, 3doo9ob, 3a8wteb, 7utmjxk), pay.cakto.com.br, "Mural dos Fundadores", "Apoiador Fundador"
+- e2e agent-browser produção (1280×800 admin, 390×844 landing): login com senha real OK → Dashboard (vendas vazias com estado elegante), Produtos (Apoiador Fundador R$9,90 assinatura ativa com pix/pix_auto/credit_card), Fundadores (NO MURAL 0 / PENDENTES 0 / TOTAL 0), logout OK → /admin/login
+- e2e landing: seção #apoio com 3 tiers fixos + fundador + Pix valor livre; seção #fundadores com estado vazio motivador ("Seja o fundador número 1") e regras visíveis (7 dias de carência, só primeiro nome); 5 links Cakto com target=_blank rel=noopener noreferrer e hrefs pay.cakto.com.br/{id} corretos
+- Checkout real verificado em nova aba: pay.cakto.com.br/xear8ps título "Apoie o Diário da Riqueza — Apoio mínimo" com formulário (nome/email/celular/CPF) + Apple Pay
+- Zero erros de página/console em todas as etapas; screenshots: verify-admin-04/05-prod-*.png, verify-cakto-04/05/06-prod-*.png
+
+Stage Summary:
+- DEPLOY DESBLOQUEADO: integração Cakto 100% em produção (632e6b6 → dpl_HKjhyGUiomC2tgT2egTEAL2W311t READY)
+- Env vars configuradas na Vercel via API; /api/founders lendo a Cakto real com regra de carência ativa
+- Pendência pós-tarefa: ROTACIONAR tokens (GitHub PAT e token Vercel passaram pelo chat; secret Cakto idem em sessão anterior) — docs/CAKTO.md já documenta o procedimento
