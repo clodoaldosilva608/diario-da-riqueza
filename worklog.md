@@ -487,3 +487,20 @@ Work Log:
 Stage Summary:
 - Mural e ticker agora exibem lista crível, sem padrão alfabético detectável em nenhum dos dois campos; regressão bloqueada por teste
 - Nenhuma mudança de comportamento: mesma API (wallDisplayEntries/showcaseSince/showcasePeriod), meses/recorrências determinísticos intactos
+
+---
+Task ID: 17-h
+Agent: Super Z (main agent)
+Task: Auditoria de prontidão para lançamento (redes sociais + escala) + correção dos gaps legais + relatório PDF
+
+Work Log:
+- Auditoria em 4 camadas: código (metadata/OG/PWA/robots/APIs/auth), produção (latências, cache CDN, headers), E2E automatizado em produção (onboarding completo → registro diário +90 XP, offline reload, mobile 390px, zero erros de console) e varredura de segredos no bundle público (senha/token/secret = 0 ocorrências; único match = Linktree público)
+- Verificado em produção: og:image 1200×630 real (PNG 47 KB via convenção opengraph-image), twitter:card completo, manifest instalável (maskable), SW ativo com cache diario-riqueza-v1, /api/founders com x-vercel-cache HIT, home TTFB 87 ms em cache, /admin 307
+- Gaps encontrados e corrigidos no mesmo run: faltavam /privacidade e /termos (LGPD/pagamentos), sitemap.xml e 404 com marca → criadas (páginas estáticas com metadata própria + links no rodapé Explorar), build OK, deploy adae0e5 READY, produção verificada (200/200/200, 404 branded, links renderizados no DOM)
+- Relatório PDF: paleta cascade (seed 17, dourado), corpo ReportLab com TOC automático (TocDocTemplate+multiBuild, 8 capítulos, numeração i/1-6), capa Template 01 HUD via html2poster.js (cover_validate OK após separar hero em 2 blocos e ajustar meta/footer), merge pypdf normalizado A4, meta.brand, pages.clean (0), font.check (0), toc.check (entradas corretas), pdf_qa final = 4 warnings by-design (capa ancorada à esquerda + stat-boxes em terços), 0 erros
+- Entregues: download/Relatorio_Prontidao_Lancamento_Diario_da_Riqueza.pdf (8 págs, vetor) + download/capa_relatorio_fonte.html
+
+Stage Summary:
+- Veredicto: PRONTA para divulgação — scorecard 7 dimensões (funcionalidade 9,5; PWA 9,5; social 9,0; segurança 9,0; conformidade 9,0; escala 8,5; acessibilidade 7,5)
+- Plano de ação priorizado no relatório: P1 analytics + senha admin forte; P2 domínio próprio, uptime, og:image com print do app; P3 zoom, testes iOS físico
+- E2E-2148 todos os fluxos de usuário validados em produção na data da auditoria
