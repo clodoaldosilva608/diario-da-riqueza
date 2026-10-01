@@ -46,7 +46,8 @@ Constantes espelhadas em `src/lib/cakto.ts` (client-safe) e
 | `CAKTO_CLIENT_ID` | OAuth2 client credentials da API pública | server-side (`cakto-server.ts`) |
 | `CAKTO_CLIENT_SECRET` | idem — **NUNCA** prefixar com `NEXT_PUBLIC_` | server-side |
 | `CAKTO_WEBHOOK_TOKEN` | token na URL do webhook (?key=…) | `/api/cakto/webhook` |
-| `ADMIN_PASSWORD` | senha única do painel `/admin` | `admin-auth.ts` |
+| `ADMIN_EMAIL` | e-mail de login do painel `/admin` (único operador) | `admin-auth.ts` |
+| `ADMIN_PASSWORD` | senha do painel `/admin` (rate limit: 5 tentativas/15 min) | `admin-auth.ts` |
 | `ADMIN_SESSION_SECRET` | segredo HMAC do cookie de sessão (8h) | `admin-auth.ts` |
 
 Sem as variáveis a app continua funcionando: o mural fica vazio com CTA e

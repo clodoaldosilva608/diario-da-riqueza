@@ -1,7 +1,7 @@
 /**
  * /admin/login — porta do painel administrativo.
  *
- * Página pública (única do admin sem sessão): formulário de senha única
+ * Página pública (única do admin sem sessão): formulário de e-mail + senha
  * server-side. Sem env vars configuradas mostra aviso "painel não
  * configurado" (fail-closed) — nada de credenciais no bundle.
  */
@@ -51,7 +51,8 @@ export default async function AdminLoginPage({
               Painel não configurado
             </p>
             <p className="mt-2 leading-relaxed text-muted-foreground">
-              Defina <code className="font-mono text-xs">ADMIN_PASSWORD</code> e{' '}
+              Defina <code className="font-mono text-xs">ADMIN_EMAIL</code>,{' '}
+              <code className="font-mono text-xs">ADMIN_PASSWORD</code> e{' '}
               <code className="font-mono text-xs">ADMIN_SESSION_SECRET</code> nas
               variáveis de ambiente do servidor para habilitar o acesso.
             </p>
@@ -60,10 +61,29 @@ export default async function AdminLoginPage({
           <form action={loginAction} className="mt-6 space-y-3">
             <div>
               <label
+                htmlFor="email"
+                className="mb-1.5 block text-sm font-semibold"
+              >
+                E-mail do operador
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                inputMode="email"
+                autoComplete="username"
+                required
+                autoFocus
+                className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-gold/60 focus:ring-2 focus:ring-gold/20"
+                aria-describedby={erro ? 'login-erro' : undefined}
+              />
+            </div>
+            <div>
+              <label
                 htmlFor="password"
                 className="mb-1.5 block text-sm font-semibold"
               >
-                Senha do operador
+                Senha
               </label>
               <input
                 id="password"
@@ -71,7 +91,6 @@ export default async function AdminLoginPage({
                 type="password"
                 autoComplete="current-password"
                 required
-                autoFocus
                 className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-gold/60 focus:ring-2 focus:ring-gold/20"
                 aria-describedby={erro ? 'login-erro' : undefined}
               />
@@ -84,7 +103,9 @@ export default async function AdminLoginPage({
               >
                 {erro === 'config'
                   ? 'Painel não configurado no servidor.'
-                  : 'Senha incorreta. Tente novamente.'}
+                  : erro === 'rate'
+                    ? 'Muitas tentativas. Aguarde alguns minutos e tente novamente.'
+                    : 'E-mail ou senha incorretos. Tente novamente.'}
               </p>
             ) : null}
             <button

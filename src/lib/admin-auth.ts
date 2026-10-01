@@ -3,16 +3,19 @@
  *
  * ⚠️ NUNCA importar em código client.
  *
- * Modelo: senha única em env var (ADMIN_PASSWORD) → cookie de sessão
- * assinado com HMAC-SHA256 (ADMIN_SESSION_SECRET) + expiração de 8h.
+ * Modelo: credenciais em env vars (ADMIN_EMAIL + ADMIN_PASSWORD) →
+ * cookie de sessão assinado com HMAC-SHA256 (ADMIN_SESSION_SECRET) +
+ * expiração de 8h.
  * - Cookie: httpOnly (inacessível a JS), sameSite=lax, secure em produção.
- * - Comparação de senha e de HMAC sempre em tempo constante.
+ * - Comparação de senha, de e-mail e de HMAC sempre em tempo constante.
  * - Sem usuários/roles: é um painel de um único operador (o criador).
  * - Fail-closed: sem env vars configuradas, login negado e páginas
  *   protegidas redirecionam para /admin/login.
+ * - Rate limit em memória no login (5 tentativas / 15 min por IP) para
+ *   conter força-bruta — proteção primeira instância (por serverless).
  *
- * O painel é desacoplado do app: rotas próprias, layout próprio, sem
- * nenhum link público apontando para cá e bloqueado no robots.txt.
+ * O painel é desacoplado do app: rotas próprias, layout próprio,
+ * bloqueado no robots.txt.
  */
 
 import 'server-only';
@@ -34,16 +37,70 @@ function sign(payload: string, secret: string): string {
   return createHmac('sha256', secret).update(payload).digest('hex');
 }
 
-/** Senha do operador configurada? (fail-closed quando ausente) */
+/** Credenciais do operador configuradas? (fail-closed quando ausentes) */
 export function adminConfigured(): boolean {
-  return Boolean(process.env.ADMIN_PASSWORD && process.env.ADMIN_SESSION_SECRET);
+  return Boolean(
+    process.env.ADMIN_EMAIL &&
+      process.env.ADMIN_PASSWORD &&
+      process.env.ADMIN_SESSION_SECRET,
+  );
 }
 
-/** Confere a senha do operador em tempo constante */
-export function checkPassword(input: string): boolean {
-  const expected = process.env.ADMIN_PASSWORD;
-  if (!expected) return false;
-  return timingSafeStrEq(input, expected);
+function normalizeEmail(raw: string): string {
+  return raw.trim().toLowerCase();
+}
+
+/**
+ * Confere e-mail + senha do operador em tempo constante.
+ * E-mail normalizado (trim + lowercase) antes da comparação.
+ */
+export function checkCredentials(email: string, password: string): boolean {
+  const expectedEmail = process.env.ADMIN_EMAIL;
+  const expectedPassword = process.env.ADMIN_PASSWORD;
+  if (!expectedEmail || !expectedPassword) return false;
+  return (
+    timingSafeStrEq(normalizeEmail(email), normalizeEmail(expectedEmail)) &&
+    timingSafeStrEq(password, expectedPassword)
+  );
+}
+
+/* =================== rate limit do login (1ª instância) =================== */
+
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_MAX_ATTEMPTS = 5;
+const loginFailures = new Map<string, { count: number; firstAt: number }>();
+
+/** A chave (IP) já estourou o limite de tentativas? */
+export function loginBlocked(key: string): boolean {
+  const entry = loginFailures.get(key);
+  if (!entry) return false;
+  if (Date.now() - entry.firstAt > LOGIN_WINDOW_MS) {
+    loginFailures.delete(key);
+    return false;
+  }
+  return entry.count >= LOGIN_MAX_ATTEMPTS;
+}
+
+/** Registra uma tentativa falha; limpa janelas antigas ocasionalmente */
+export function registerLoginFailure(key: string): void {
+  // varredura oportunista: mantém o Map pequeno em instâncias longevas
+  if (loginFailures.size > 500) {
+    const now = Date.now();
+    for (const [k, v] of loginFailures) {
+      if (now - v.firstAt > LOGIN_WINDOW_MS) loginFailures.delete(k);
+    }
+  }
+  const entry = loginFailures.get(key);
+  if (!entry || Date.now() - entry.firstAt > LOGIN_WINDOW_MS) {
+    loginFailures.set(key, { count: 1, firstAt: Date.now() });
+    return;
+  }
+  entry.count += 1;
+}
+
+/** Sucesso no login — zera as tentativas da chave */
+export function clearLoginFailures(key: string): void {
+  loginFailures.delete(key);
 }
 
 /** Valor do cookie de sessão: "{expiraEmMs}.{hmac}" */
