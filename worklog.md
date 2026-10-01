@@ -184,3 +184,41 @@ Stage Summary:
 - Feature 100% pronta, testada e no GitHub (75bdb81); falta 1 passo: novo token Vercel do usuário (bunx vercel deploy --prod) OU configurar integração GitHub→Vercel (aí o push atual deploya sozinho)
 - e2e screenshots de evidência em download/e2e_*.png
 - Landing sem promessas financeiras/depoimentos inventados; offline e dashboard preservados
+
+---
+Task ID: 9
+Agent: Super Z (main agent)
+Task: "Não consegui acessar a Landingpage" — diagnosticar e resolver acesso do usuário à landing page
+
+Work Log:
+- Diagnóstico: produção JÁ tem a landing no ar (chunk fce5f137 contém markers; agent-browser em perfil limpo carregou hero/Como funciona/CTAs sem erros) — o deploy da Task 8 aconteceu antes do bloqueio de token relatado no log
+- Causa real: usuário onboardado entra direto no dashboard (gate do page.tsx), nunca vê a landing; caminho existente era só Configurações → "Ver apresentação do projeto"
+- Falso alarme descartado: "ydrated" em page.tsx era artefato de exibição do terminal — od -c confirmou bytes corretos "[hydrated"; tsc sem erros em src/
+- Solução: redirect 308 /landing → /?apresentacao=1 no next.config.ts + useEffect no page.tsx que consome o parâmetro (limpa a URL via replaceState e abre a landing se onboardado — leitura imperativa do store evita reabrir após onboarding)
+- Validação: 141/141 testes (20 contact + 55 seed + 66 obsidian); tsc limpo; ESLint limpo; next build OK; e2e local: /landing→landing (onboardado com "Abrir meu Diário"), URL limpa para "/", retorno ao dashboard OK, console sem erros, offline PWA OK
+- Git: commit 55d238d enviado ao GitHub main
+- Deploy BLOQUEADO: vercel whoami = Logged out (token anterior revogado, nenhum token armazenado em .env/.vercel/home); /landing ainda 404 na produção — integração GitHub→Vercel não configurada (push não auto-deploya)
+
+Stage Summary:
+- Usuário JÁ pode ver a landing hoje: (1) aba anônima no site, ou (2) Configurações → "Ver apresentação do projeto"
+- Após o próximo deploy, /landing será a URL direta/compartilhável
+- Pendência: novo token Vercel do usuário para `bunx vercel@latest deploy --prod --yes --token='...'` ou configurar integração GitHub→Vercel
+
+---
+Task ID: 10
+Agent: Super Z (main agent)
+Task: "crie o repositório e hospede na vercel" — deploy produção com novos tokens GitHub + Vercel
+
+Work Log:
+- GitHub: token válido (clodoaldosilva608); repo clodoaldosilva608/diario-da-riqueza já existia com main em 55d238d (= código atual: landing + WhatsApp + Pix + atalho /landing)
+- Commit local extra 5e5e11e era ruído de auto-commit (só mode-changes em PNGs) → descartado com reset --soft; main remoto permaneceu 55d238d
+- Vercel: token vcp_ válido (não funciona como ?token= na API — exige header Authorization: Bearer); projeto diario-da-riqueza localizado (prj_RmYNRkVYWtnrAgFDwb0kyb2dOXoj, team_iylYgr5VwMOCi7FtolZSwtcO)
+- .vercel/project.json recriado com orgId/projectId corretos (estava ausente no sandbox)
+- Deploy --prod: Ready in 48s; aviso "Deployment Protection" — verificado depois: acesso anônimo ao domínio retorna 200 (proteção não afeta o domínio de produção)
+- Validação pós-deploy (curl + agent-browser): /landing → 308 → /?apresentacao=1 no ar; visitante novo vê landing completa; onboardado via /landing vê "Abrir meu Diário" e volta ao dashboard; seção "Ajude a construir o projeto" presente; wa.me href correto (5581920051068 + mensagem); modal Pix abre, copiar mostra "Chave Pix copiada!", Fechar OK; console sem erros
+- Git remote já usava token embutido funcional; ls-remote confirma main em 55d238d
+
+Stage Summary:
+- PRODUÇÃO ATUALIZADA: https://diario-da-riqueza.vercel.app (landing + /landing + suporte no dashboard)
+- URL direta/compartilhável da apresentação: https://diario-da-riqueza.vercel.app/landing
+- Pendente: revogar AMBOS os tokens expostos no chat após uso; integração GitHub→Vercel ainda não configurada (auto-deploy exige conexão no dashboard)
