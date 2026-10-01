@@ -28,33 +28,8 @@ import {
   PIX_BR_CODE, PIX_KEY_DISPLAY, PIX_KEY_NORMALIZED, PIX_RECEIVER_NAME,
   PIX_SUPPORT_INTRO, PROJECT_NAME,
 } from '@/lib/contact';
+import { copyText } from '@/lib/clipboard';
 import pixQrSrc from './pix-qr.png';
-
-/** Copia texto com fallback para navegadores sem Clipboard API (ou permissão negada) */
-async function copyText(text: string): Promise<boolean> {
-  try {
-    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-  } catch {
-    /* tenta o fallback abaixo */
-  }
-  try {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.setAttribute('readonly', '');
-    ta.style.position = 'fixed';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select();
-    const okFlag = document.execCommand('copy');
-    document.body.removeChild(ta);
-    return okFlag;
-  } catch {
-    return false;
-  }
-}
 
 export function PixSupportDialog({
   open,

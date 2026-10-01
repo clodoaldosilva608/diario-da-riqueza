@@ -92,6 +92,68 @@ export const SUPPORT_NUDGE_INTRO =
   'de R$ 1 ao que você puder. É o apoio voluntário que mantém o projeto no ' +
   'ar e permite que ele continue 100% gratuito para todos.';
 
+/* ============================== COMPARTILHAR ============================== */
+
+/** Link canônico da aplicação (o middleware redireciona o domínio antigo) */
+export const SHARE_URL = 'https://diariodariqueza.vercel.app';
+
+/** Assunto do compartilhamento por e-mail */
+export const SHARE_SUBJECT = 'Diário da Riqueza — aplicação gratuita e offline';
+
+/** Mensagem padrão de compartilhamento ("versão mais discreta", do criador) */
+export const SHARE_TEXT =
+  'A ideia do caderno é simples, mas poderosa: definir onde você quer chegar, ' +
+  'acompanhar seus gastos e registrar o que está fazendo todos os dias. Eu ' +
+  'organizei esse método em uma aplicação gratuita e offline para facilitar a ' +
+  'rotina. Está aqui para quem quiser conhecer: https://diariodariqueza.vercel.app';
+
+/** Texto curto do modal de compartilhar */
+export const SHARE_INTRO =
+  'Ajude mais pessoas a organizarem metas, gastos e hábitos. ' +
+  'Escolha onde compartilhar:';
+
+/** Perguntas e respostas do pop-up "Sobre o método e como ajudar" */
+export const METHOD_FAQ = [
+  {
+    question: 'O método garante riqueza?',
+    answer:
+      'Não existe garantia de enriquecimento. A proposta é ajudar a pessoa a ter ' +
+      'mais clareza sobre suas metas, finanças, estudos e hábitos. O resultado ' +
+      'depende das decisões e da consistência de cada um. A ferramenta serve como ' +
+      'apoio para acompanhar esse processo.',
+  },
+  {
+    question: 'Como posso ajudar?',
+    answer:
+      'Você pode usar e compartilhar a aplicação. Se quiser apoiar diretamente o ' +
+      'desenvolvimento, qualquer contribuição será muito bem-vinda. O acesso ' +
+      'continua gratuito para todos.',
+  },
+] as const;
+
+/**
+ * Monta os alvos de compartilhamento web (abrem em nova aba — o componente
+ * sempre usa rel="noopener noreferrer"). No celular o botão principal usa a
+ * Web Share API, que mostra TODOS os apps instalados no dispositivo; esta
+ * grade é o fallback universal (desktop) e atalho rápido.
+ */
+export function buildShareTargets(
+  text: string,
+  url: string,
+): Array<{ name: string; href: string }> {
+  const t = encodeURIComponent(text);
+  const u = encodeURIComponent(url);
+  const s = encodeURIComponent(SHARE_SUBJECT);
+  return [
+    { name: 'WhatsApp', href: `https://wa.me/?text=${t}%20${u}` },
+    { name: 'Telegram', href: `https://t.me/share/url?url=${u}&text=${t}` },
+    { name: 'Facebook', href: `https://www.facebook.com/sharer/sharer.php?u=${u}` },
+    { name: 'X (Twitter)', href: `https://twitter.com/intent/tweet?text=${t}&url=${u}` },
+    { name: 'LinkedIn', href: `https://www.linkedin.com/sharing/share-offsite/?url=${u}` },
+    { name: 'E-mail', href: `mailto:?subject=${s}&body=${t}%20${u}` },
+  ];
+}
+
 /**
  * Normaliza uma chave Pix do tipo telefone para o padrão E.164 brasileiro
  * (+55 + DDD + número), aceitando as variações mais comuns de digitação:

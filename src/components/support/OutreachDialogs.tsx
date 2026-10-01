@@ -1,51 +1,67 @@
 'use client';
 
 /**
- * OutreachDialogs — pop-ups de engajamento do projeto (2 modais locais).
+ * OutreachDialogs — ciclo de pop-ups de engajamento do projeto (4 modais).
  *
- * 1) Apoio: pedido discreto de contribuição de qualquer valor. O botão
- *    "Apoiar com qualquer valor" fecha este pop-up e abre o PixSupportDialog
- *    (QR Code + chave Pix + copia e cola) já existente — nenhuma duplicação
- *    de lógica de Pix.
+ * 1) support — Apoio: pedido discreto de contribuição de qualquer valor;
+ *    "Apoiar com qualquer valor" abre o PixSupportDialog (QR + chave Pix).
+ * 2) share — Compartilhar: texto "versão mais discreta" do criador + botão
+ *    que abre o ShareDialog (menu nativo do dispositivo + redes sociais).
+ * 3) site — Meu site / criadores parceiros: clodoaldo.vercel.app.
+ * 4) method — Sobre o método e como ajudar: as duas perguntas/respostas
+ *    ("O método garante riqueza?" e "Como posso ajudar?") + compartilhar.
  *
- * 2) Site/criadores parceiros: divulga o site pessoal com botões diretos
- *    para conhecer e apoiar os outros apps. Contexto: projetos feitos por
- *    conta própria, só com apoio voluntário, sempre com o objetivo de
- *    aprender e oferecer aplicações gratuitas.
- *
- * Cadência (ver src/lib/outreach.ts):
- * - Checa 40s após o app abrir (e re-checa ao fechar tour/landing).
- * - Ao fechar o pop-up de apoio, agenda o do site após 20s (se vencido).
- * - Cada pop-up no máximo 1x por sessão e no máx. a cada 7 dias
- *   (timestamps persistidos no store — nada vai para servidores).
+ * Rotação (ver src/lib/outreach.ts):
+ * - 40s após abrir o app, mostra o PRIMEIRO pop-up vencido na ordem
+ *   support → share → site → method (cadência de 7 dias por pop-up).
+ * - Ao fechar um pop-up SEM ação positiva, o próximo vencido entra em 20s
+ *   (cadeia), limitado a OUTREACH_MAX_PER_SESSION por sessão.
+ * - Ação positiva (apoiar / compartilhar / visitar site) nunca dispara cadeia.
  * - Nunca aparece com tour guiado, landing ou busca global abertos.
+ * - Nada é enviado a servidores: só timestamps locais no localStorage.
  *
  * Segurança dos links externos: target="_blank" SEMPRE com
  * rel="noopener noreferrer" (corta window.opener — reverse tabnabbing).
  */
 
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { ExternalLink, Globe, HeartHandshake, Sparkles } from 'lucide-react';
+import { ExternalLink, Globe, HeartHandshake, Share2, ShieldCheck } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter,
   DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { PixSupportDialog } from './PixSupportDialog';
+import { ShareDialog } from './ShareDialog';
 import { useAppStore } from '@/stores/useAppStore';
 import {
-  OUTREACH_CHAIN_DELAY_MS, OUTREACH_FIRST_DELAY_MS,
-  shouldShowSitePromo, shouldShowSupportNudge,
+  OUTREACH_CHAIN_DELAY_MS, OUTREACH_FIRST_DELAY_MS, OUTREACH_MAX_PER_SESSION,
+  nextPopupDue, type OutreachGate, type OutreachKind,
 } from '@/lib/outreach';
 import {
-  PARTNERS_URL, PERSONAL_SITE_URL,
-  SITE_PROMO_INTRO, SUPPORT_NUDGE_INTRO,
+  METHOD_FAQ, PARTNERS_URL, PERSONAL_SITE_URL, SITE_PROMO_INTRO,
+  SUPPORT_NUDGE_INTRO,
 } from '@/lib/contact';
 
-/** Snapshot de gate no estado atual do store (lido dentro de timers) */
-function gateNow(busyOverlay: boolean) {
-  const s = useAppStore.getState();
-  return { hydrated: true, onboarded: s.onboarded, busyOverlay };
+type StoreState = ReturnType<typeof useAppStore.getState>;
+
+/** Timestamps persistidos dos 4 pop-ups, na forma que o outreach.ts espera */
+function lastByKind(s: StoreState): Record<OutreachKind, number | null> {
+  return {
+    support: s.supportNudgeLastAt,
+    share: s.shareNudgeLastAt,
+    site: s.sitePromoLastAt,
+    method: s.methodNudgeLastAt,
+  };
+}
+
+/** Gate no estado ATUAL do store (lido dentro de timers) */
+function gateFrom(s: StoreState): OutreachGate {
+  return {
+    hydrated: true,
+    onboarded: s.onboarded,
+    busyOverlay: s.tourOpen || s.landingOpen || s.searchOpen,
+  };
 }
 
 export function OutreachDialogs() {
@@ -59,98 +75,95 @@ export function OutreachDialogs() {
   const tourOpen = useAppStore((s) => s.tourOpen);
   const landingOpen = useAppStore((s) => s.landingOpen);
   const searchOpen = useAppStore((s) => s.searchOpen);
-  const setSupportNudgeShown = useAppStore((s) => s.setSupportNudgeShown);
-  const setSitePromoShown = useAppStore((s) => s.setSitePromoShown);
 
-  const [supportOpen, setSupportOpen] = useState(false);
-  const [siteOpen, setSiteOpen] = useState(false);
+  const [openKind, setOpenKind] = useState<OutreachKind | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
   const [pixOpen, setPixOpen] = useState(false);
 
-  // Máx. 1 exibição de cada pop-up por sessão (não persistido)
-  const supportShownRef = useRef(false);
-  const siteShownRef = useRef(false);
-  // True quando o apoio fechou porque o usuário foi ao Pix (sem cadeia)
-  const skipChainRef = useRef(false);
+  // Controle de sessão (não persistido)
+  const shownRef = useRef<Set<OutreachKind>>(new Set());
+  const chainCountRef = useRef(0);
   const chainTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Ação positiva (apoiar/compartilhar/visitar site) não dispara cadeia
+  const positiveRef = useRef(false);
 
   const busyOverlay = tourOpen || landingOpen || searchOpen;
 
-  // Timer principal: OUTREACH_FIRST_DELAY_MS após o gate liberar
+  function markShown(kind: OutreachKind, at: number) {
+    shownRef.current.add(kind);
+    const s = useAppStore.getState();
+    if (kind === 'support') s.setSupportNudgeShown(at);
+    else if (kind === 'share') s.setShareNudgeShown(at);
+    else if (kind === 'site') s.setSitePromoShown(at);
+    else s.setMethodNudgeShown(at);
+  }
+
+  /** Agenda o próximo pop-up vencido (cadeia de 20s), respeitando limites */
+  function scheduleChain() {
+    if (chainTimerRef.current) clearTimeout(chainTimerRef.current);
+    // Ação positiva = usuário já respondeu ao convite; não insistir agora
+    if (positiveRef.current) {
+      positiveRef.current = false;
+      return;
+    }
+    if (chainCountRef.current >= OUTREACH_MAX_PER_SESSION) return;
+    const s = useAppStore.getState();
+    const next = nextPopupDue(
+      Date.now(),
+      lastByKind(s),
+      gateFrom(s),
+      [...shownRef.current],
+    );
+    if (!next) return;
+    chainCountRef.current += 1;
+    markShown(next, Date.now());
+    chainTimerRef.current = setTimeout(() => setOpenKind(next), OUTREACH_CHAIN_DELAY_MS);
+  }
+
+  // Timer principal: primeira checagem 40s após o gate liberar
   useEffect(() => {
     if (!hydrated || !onboarded || busyOverlay) return;
     const t = setTimeout(() => {
-      const now = Date.now();
-      // 1º pop-up: apoio (se vencido e ainda não exibido nesta sessão)
-      if (
-        !supportShownRef.current &&
-        shouldShowSupportNudge(
-          now,
-          useAppStore.getState().supportNudgeLastAt,
-          gateNow(false),
-        )
-      ) {
-        supportShownRef.current = true;
-        setSupportNudgeShown(now);
-        setSupportOpen(true);
-        return;
-      }
-      // Apoio não vencido → checa o pop-up do site de forma independente
-      if (
-        !siteShownRef.current &&
-        shouldShowSitePromo(
-          now,
-          useAppStore.getState().sitePromoLastAt,
-          gateNow(false),
-        )
-      ) {
-        siteShownRef.current = true;
-        setSitePromoShown(now);
-        setSiteOpen(true);
+      const s = useAppStore.getState();
+      const next = nextPopupDue(Date.now(), lastByKind(s), gateFrom(s), [...shownRef.current]);
+      if (next) {
+        chainCountRef.current = 1;
+        markShown(next, Date.now());
+        setOpenKind(next);
       }
     }, OUTREACH_FIRST_DELAY_MS);
     return () => clearTimeout(t);
-  }, [hydrated, onboarded, busyOverlay, setSupportNudgeShown, setSitePromoShown]);
+  }, [hydrated, onboarded, busyOverlay]);
 
   // Limpa timer encadeado ao desmontar
   useEffect(() => () => {
     if (chainTimerRef.current) clearTimeout(chainTimerRef.current);
   }, []);
 
-  /**
-   * Fechamento do pop-up de apoio: agenda o pop-up do site (cadeia de 20s)
-   * se ele estiver vencido e ainda não tiver aparecido na sessão. O timestamp
-   * do site é gravado no agendamento para não duplicar se o app fechar antes.
-   */
-  function handleSupportOpenChange(next: boolean) {
-    setSupportOpen(next);
-    if (next) return;
-    if (chainTimerRef.current) clearTimeout(chainTimerRef.current);
-    // Quem clicou "Apoiar com qualquer valor" já demonstrou intenção — não
-    // empilhar o pop-up do site por cima do painel Pix.
-    if (skipChainRef.current) {
-      skipChainRef.current = false;
-      return;
-    }
-    if (siteShownRef.current) return;
-    const now = Date.now();
-    if (shouldShowSitePromo(now, useAppStore.getState().sitePromoLastAt, gateNow(busyOverlay))) {
-      siteShownRef.current = true;
-      setSitePromoShown(now);
-      chainTimerRef.current = setTimeout(() => setSiteOpen(true), OUTREACH_CHAIN_DELAY_MS);
-    }
+  /** Fecha o pop-up atual com ação positiva e NÃO agenda cadeia */
+  function closePositive(action?: () => void) {
+    positiveRef.current = true;
+    setOpenKind(null);
+    scheduleChain(); // consome positiveRef e não agenda nada
+    action?.();
   }
 
-  /** Botão principal do pop-up de apoio → abre o painel Pix existente */
-  function handleGoToPix() {
-    skipChainRef.current = true;
-    setSupportOpen(false);
-    setPixOpen(true);
+  /** Fecha o pop-up atual sem ação ("Agora não", ESC, X) → permite cadeia */
+  function closeNeutral() {
+    setOpenKind(null);
+    scheduleChain();
+  }
+
+  /** onOpenChange do Dialog ativo — só dispara em interações do usuário */
+  function handleDialogOpenChange(next: boolean) {
+    if (next) return;
+    closeNeutral();
   }
 
   return (
     <>
-      {/* ================= POP-UP 1: APOIO (qualquer valor) ================= */}
-      <Dialog open={supportOpen} onOpenChange={handleSupportOpenChange}>
+      {/* ================= POP-UP: APOIO (qualquer valor) ================= */}
+      <Dialog open={openKind === 'support'} onOpenChange={handleDialogOpenChange}>
         <DialogContent
           className="max-w-[calc(100%-2rem)] gap-3 border-gold/25 p-4 sm:max-w-sm sm:gap-4 sm:p-6"
           role="dialog"
@@ -170,7 +183,7 @@ export function OutreachDialogs() {
 
           <DialogFooter className="flex-col gap-2 sm:flex-col sm:justify-center">
             <Button
-              onClick={handleGoToPix}
+              onClick={() => closePositive(() => setPixOpen(true))}
               className="h-11 w-full whitespace-normal bg-gold text-base font-semibold text-black hover:bg-gold-light"
               aria-label="Apoiar com qualquer valor — abre o painel Pix com QR Code e chave para copiar"
             >
@@ -178,9 +191,18 @@ export function OutreachDialogs() {
               Apoiar com qualquer valor
             </Button>
             <Button
+              variant="outline"
+              className="h-11 w-full whitespace-normal border-gold/40 text-sm font-semibold text-gold hover:bg-gold/10"
+              onClick={() => closePositive(() => setShareOpen(true))}
+              aria-label="Compartilhar com os amigos — abre o menu de compartilhamento do dispositivo e redes sociais"
+            >
+              <Share2 className="h-4 w-4" aria-hidden="true" />
+              Compartilhar com os amigos
+            </Button>
+            <Button
               variant="ghost"
               className="h-10 w-full text-sm text-muted-foreground"
-              onClick={() => handleSupportOpenChange(false)}
+              onClick={closeNeutral}
               aria-label="Agora não — fechar este aviso (ele pode reaparecer em alguns dias)"
             >
               Agora não
@@ -189,8 +211,51 @@ export function OutreachDialogs() {
         </DialogContent>
       </Dialog>
 
-      {/* ============ POP-UP 2: SITE PESSOAL / CRIADORES PARCEIROS ============ */}
-      <Dialog open={siteOpen} onOpenChange={setSiteOpen}>
+      {/* ============ POP-UP: COMPARTILHAR (versão mais discreta) ============ */}
+      <Dialog open={openKind === 'share'} onOpenChange={handleDialogOpenChange}>
+        <DialogContent
+          className="max-w-[calc(100%-2rem)] gap-3 border-gold/25 p-4 sm:max-w-md sm:gap-4 sm:p-6"
+          role="dialog"
+          aria-label="Convite para compartilhar a aplicação com os amigos"
+        >
+          <DialogHeader>
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-gold/40 bg-gold/10">
+              <Share2 className="h-7 w-7 text-gold" aria-hidden="true" />
+            </div>
+            <DialogTitle className="text-center font-display text-xl font-bold">
+              Compartilhe com os amigos
+            </DialogTitle>
+            <DialogDescription className="text-center text-sm leading-relaxed">
+              A ideia do caderno é simples, mas poderosa: definir onde você quer
+              chegar, acompanhar seus gastos e registrar o que está fazendo todos
+              os dias. Este método virou uma aplicação gratuita e offline —
+              compartilhe com quem quiser conhecer.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="flex-col gap-2 sm:flex-col sm:justify-center">
+            <Button
+              onClick={() => closePositive(() => setShareOpen(true))}
+              className="h-11 w-full whitespace-normal bg-gold text-base font-semibold text-black hover:bg-gold-light"
+              aria-label="Compartilhar — abre o menu do dispositivo com todas as redes e aplicativos disponíveis"
+            >
+              <Share2 className="h-4 w-4" aria-hidden="true" />
+              Compartilhar com os amigos
+            </Button>
+            <Button
+              variant="ghost"
+              className="h-10 w-full text-sm text-muted-foreground"
+              onClick={closeNeutral}
+              aria-label="Agora não — fechar este aviso (ele pode reaparecer em alguns dias)"
+            >
+              Agora não
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ============ POP-UP: SITE PESSOAL / CRIADORES PARCEIROS ============ */}
+      <Dialog open={openKind === 'site'} onOpenChange={handleDialogOpenChange}>
         <DialogContent
           className="max-w-[calc(100%-2rem)] gap-3 border-gold/25 p-4 sm:max-w-md sm:gap-4 sm:p-6"
           role="dialog"
@@ -215,7 +280,7 @@ export function OutreachDialogs() {
                 key={label}
                 className="inline-flex items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-2.5 py-1 text-[11px] font-medium text-gold"
               >
-                <Sparkles className="h-3 w-3" aria-hidden="true" />
+                <ShieldCheck className="h-3 w-3" aria-hidden="true" />
                 {label}
               </span>
             ))}
@@ -230,6 +295,7 @@ export function OutreachDialogs() {
                 href={PERSONAL_SITE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => closePositive()}
                 aria-label="Visitar meu site pessoal em clodoaldo.vercel.app — abre em nova aba"
                 title="Abre em nova aba: https://clodoaldo.vercel.app/"
               >
@@ -246,6 +312,7 @@ export function OutreachDialogs() {
                 href={PARTNERS_URL}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => closePositive()}
                 aria-label="Conhecer e apoiar outros apps na página Criadores Parceiros — abre em nova aba"
                 title="Abre em nova aba: https://clodoaldo.vercel.app/criadores-parceiros"
               >
@@ -256,7 +323,7 @@ export function OutreachDialogs() {
             <Button
               variant="ghost"
               className="h-10 w-full text-sm text-muted-foreground"
-              onClick={() => setSiteOpen(false)}
+              onClick={closeNeutral}
               aria-label="Talvez depois — fechar este aviso (ele pode reaparecer em alguns dias)"
             >
               Talvez depois
@@ -265,7 +332,68 @@ export function OutreachDialogs() {
         </DialogContent>
       </Dialog>
 
-      {/* Painel Pix reaproveitado (QR + chave + copia e cola) */}
+      {/* ========= POP-UP: SOBRE O MÉTODO E COMO AJUDAR (FAQ) ========= */}
+      <Dialog open={openKind === 'method'} onOpenChange={handleDialogOpenChange}>
+        <DialogContent
+          className="max-w-[calc(100%-2rem)] gap-3 border-gold/25 p-4 sm:max-w-md sm:gap-4 sm:p-6"
+          role="dialog"
+          aria-label="Sobre o método e como ajudar o projeto"
+        >
+          <DialogHeader>
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-gold/40 bg-gold/10">
+              <ShieldCheck className="h-7 w-7 text-gold" aria-hidden="true" />
+            </div>
+            <DialogTitle className="text-center font-display text-xl font-bold">
+              Sobre o método — e como ajudar
+            </DialogTitle>
+            <DialogDescription className="text-center text-sm leading-relaxed">
+              Transparência total sobre o que esta ferramenta é (e o que não é).
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            {METHOD_FAQ.map(({ question, answer }) => (
+              <div key={question} className="rounded-2xl border border-border p-3 sm:p-4">
+                <p className="text-sm font-semibold">{question}</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                  {answer}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <DialogFooter className="flex-col gap-2 sm:flex-col sm:justify-center">
+            <Button
+              onClick={() => closePositive(() => setShareOpen(true))}
+              className="h-11 w-full whitespace-normal bg-gold text-base font-semibold text-black hover:bg-gold-light"
+              aria-label="Compartilhar com os amigos — abre o menu do dispositivo com todas as redes disponíveis"
+            >
+              <Share2 className="h-4 w-4" aria-hidden="true" />
+              Compartilhar com os amigos
+            </Button>
+            <Button
+              variant="outline"
+              className="h-11 w-full whitespace-normal border-gold/40 text-sm font-semibold text-gold hover:bg-gold/10"
+              onClick={() => closePositive(() => setPixOpen(true))}
+              aria-label="Apoiar com qualquer valor — abre o painel Pix com QR Code e chave para copiar"
+            >
+              <HeartHandshake className="h-4 w-4" aria-hidden="true" />
+              Apoiar com qualquer valor
+            </Button>
+            <Button
+              variant="ghost"
+              className="h-10 w-full text-sm text-muted-foreground"
+              onClick={closeNeutral}
+              aria-label="Fechar este aviso (ele pode reaparecer em alguns dias)"
+            >
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modais de destino (fora da rotação, abertos por ações positivas) */}
+      <ShareDialog open={shareOpen} onOpenChange={setShareOpen} />
       <PixSupportDialog open={pixOpen} onOpenChange={setPixOpen} />
     </>
   );

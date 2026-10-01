@@ -42,6 +42,10 @@ interface AppState {
   supportNudgeLastAt: number | null;
   /** Última exibição do pop-up do site/criadores parceiros (epoch ms, null = nunca) */
   sitePromoLastAt: number | null;
+  /** Última exibição do pop-up de compartilhar (epoch ms, null = nunca) */
+  shareNudgeLastAt: number | null;
+  /** Última exibição do pop-up do método/ajuda (epoch ms, null = nunca) */
+  methodNudgeLastAt: number | null;
   /** Tour guiado de primeira visita (persistido) */
   tourDone: boolean;
   /** Tour aberto agora (transiente) */
@@ -66,6 +70,8 @@ interface AppState {
   setPrintPhysical: (v: boolean) => void;
   setSupportNudgeShown: (at: number) => void;
   setSitePromoShown: (at: number) => void;
+  setShareNudgeShown: (at: number) => void;
+  setMethodNudgeShown: (at: number) => void;
   setTourDone: (v: boolean) => void;
   setTourOpen: (v: boolean) => void;
   celebrate: (xp: number, message: string) => void;
@@ -99,6 +105,8 @@ export const useAppStore = create<AppState>()(
       printPhysical: false,
       supportNudgeLastAt: null,
       sitePromoLastAt: null,
+      shareNudgeLastAt: null,
+      methodNudgeLastAt: null,
       tourDone: false,
       tourOpen: false,
       celebration: null,
@@ -121,6 +129,8 @@ export const useAppStore = create<AppState>()(
       setPrintPhysical: (v) => set({ printPhysical: v }),
       setSupportNudgeShown: (at) => set({ supportNudgeLastAt: at }),
       setSitePromoShown: (at) => set({ sitePromoLastAt: at }),
+      setShareNudgeShown: (at) => set({ shareNudgeLastAt: at }),
+      setMethodNudgeShown: (at) => set({ methodNudgeLastAt: at }),
       setTourDone: (v) => set({ tourDone: v }),
       setTourOpen: (v) => set({ tourOpen: v }),
       celebrate: (xp, message) => set({ celebration: { xp, message } }),
