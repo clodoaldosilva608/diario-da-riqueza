@@ -4,13 +4,15 @@
  * PixSupportDialog — modal de apoio voluntário ao projeto via Pix.
  *
  * - Exibe a chave Pix (telefone) em formato legível e copia a versão normalizada.
- * - Feedback visual imediato ("Chave Pix copiada") + toast.
- * - Instruções simples para pagar no app do banco.
+ * - QR Code Pix: PNG estático importado (asset com hash → cache-first no SW →
+ *   funciona offline), gerado a partir do BR Code oficial do banco
+ *   (PIX_BR_CODE) e verificado por decodificação em scripts/generate_pix_qr.py.
+ * - "Pix copia e cola": botão copia o payload exato do BR Code.
+ * - Feedback visual imediato ("Chave Pix copiada" / "Código Pix copiado") + toast.
+ * - Instruções simples para pagar no app do banco (QR ou copia e cola).
  * - Segurança: apenas exibição e cópia — nenhum dado bancário é coletado,
- *   nenhuma cobrança automática, nenhum pagamento disparado, nada em analytics.
- * - Não gera QR Code: o padrão BR Code exige campos obrigatórios não fornecidos
- *   (ex.: cidade do recebedor, tag 60) — inventar dados violaria a regra do projeto.
- *   A chave + cópia funciona em 100% dos bancos.
+ *   nenhuma cobrança automática, nenhum pagamento disparado, nada em analytics,
+ *   nenhum serviço externo de geração de QR.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -23,8 +25,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import {
-  PIX_KEY_DISPLAY, PIX_KEY_NORMALIZED, PIX_SUPPORT_INTRO, PROJECT_NAME,
+  PIX_BR_CODE, PIX_KEY_DISPLAY, PIX_KEY_NORMALIZED, PIX_RECEIVER_NAME,
+  PIX_SUPPORT_INTRO, PROJECT_NAME,
 } from '@/lib/contact';
+import pixQrSrc from './pix-qr.png';
 
 /** Copia texto com fallback para navegadores sem Clipboard API (ou permissão negada) */
 async function copyText(text: string): Promise<boolean> {
@@ -59,13 +63,14 @@ export function PixSupportDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const [copied, setCopied] = useState(false);
+  type CopiedWhat = 'key' | 'code';
+  const [copied, setCopied] = useState<CopiedWhat | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Limpa timer + feedback sempre que o modal fecha (todas as vias passam aqui)
   function handleOpenChange(next: boolean) {
     if (!next) {
-      setCopied(false);
+      setCopied(null);
       if (timerRef.current) clearTimeout(timerRef.current);
     }
     onOpenChange(next);
@@ -76,18 +81,31 @@ export function PixSupportDialog({
     if (timerRef.current) clearTimeout(timerRef.current);
   }, []);
 
-  async function handleCopy() {
+  function flashCopied(what: CopiedWhat, successMsg: string, hint: string) {
+    setCopied(what);
+    toast.success(successMsg, { description: hint });
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setCopied(null), 3000);
+  }
+
+  async function handleCopyKey() {
     const okFlag = await copyText(PIX_KEY_NORMALIZED);
     if (okFlag) {
-      setCopied(true);
-      toast.success('Chave Pix copiada!', {
-        description: 'Cole no app do seu banco para apoiar o projeto.',
-      });
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => setCopied(false), 3000);
+      flashCopied('key', 'Chave Pix copiada!', 'Cole no app do seu banco para apoiar o projeto.');
     } else {
       toast.error('Não foi possível copiar automaticamente.', {
         description: 'Selecione a chave destacada e copie manualmente.',
+      });
+    }
+  }
+
+  async function handleCopyCode() {
+    const okFlag = await copyText(PIX_BR_CODE);
+    if (okFlag) {
+      flashCopied('code', 'Código Pix copiado!', 'Use "Pix copia e cola" no app do seu banco.');
+    } else {
+      toast.error('Não foi possível copiar automaticamente.', {
+        description: 'Escaneie o QR Code ou copie a chave Pix manualmente.',
       });
     }
   }
@@ -111,8 +129,25 @@ export function PixSupportDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Chave Pix + cópia */}
+        {/* QR Code — BR Code oficial do banco (PNG estático, offline) */}
         <div className="space-y-3">
+          <div className="rounded-2xl border border-border bg-muted/40 p-4">
+            <div className="mx-auto w-fit rounded-xl bg-white p-3 shadow-sm">
+              <img
+                src={pixQrSrc.src}
+                alt={`QR Code Pix do projeto ${PROJECT_NAME} — escaneie com o app do seu banco para apoiar`}
+                width={196}
+                height={196}
+                className="block h-[196px] w-[196px]"
+                loading="eager"
+                decoding="async"
+              />
+            </div>
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              Escaneie o QR Code no app do banco — valor livre, você escolhe
+            </p>
+          </div>
+
           <div className="rounded-2xl border border-border bg-muted/40 p-4 text-center">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Chave Pix — telefone
@@ -124,23 +159,23 @@ export function PixSupportDialog({
               {PIX_KEY_DISPLAY}
             </p>
             <p className="mt-1 text-[11px] text-muted-foreground">
-              Projeto: {PROJECT_NAME}
+              Projeto: {PROJECT_NAME} · Recebedor: {PIX_RECEIVER_NAME}
             </p>
           </div>
 
           <Button
-            onClick={handleCopy}
+            onClick={handleCopyKey}
             className={`
               h-11 w-full text-base font-semibold
-              ${copied
+              ${copied === 'key'
                 ? 'bg-emerald-wealth text-white hover:bg-emerald-wealth'
                 : 'bg-gold text-black hover:bg-gold-light'}
             `}
             aria-label={
-              copied ? 'Chave Pix copiada' : 'Copiar chave Pix para a área de transferência'
+              copied === 'key' ? 'Chave Pix copiada' : 'Copiar chave Pix para a área de transferência'
             }
           >
-            {copied ? (
+            {copied === 'key' ? (
               <>
                 <Check className="h-4 w-4" aria-hidden="true" /> Chave Pix copiada
               </>
@@ -150,8 +185,38 @@ export function PixSupportDialog({
               </>
             )}
           </Button>
+
+          <Button
+            variant="outline"
+            onClick={handleCopyCode}
+            className={`
+              h-11 w-full text-sm font-semibold
+              ${copied === 'code'
+                ? 'border-emerald-wealth bg-emerald-wealth/10 text-emerald-wealth hover:bg-emerald-wealth/10'
+                : ''}
+            `}
+            aria-label={
+              copied === 'code'
+                ? 'Código Pix copiado'
+                : 'Copiar o código Pix copia e cola para a área de transferência'
+            }
+          >
+            {copied === 'code' ? (
+              <>
+                <Check className="h-4 w-4" aria-hidden="true" /> Código Pix copiado
+              </>
+            ) : (
+              <>
+                <Copy className="h-4 w-4" aria-hidden="true" /> Copiar código Pix (copia e cola)
+              </>
+            )}
+          </Button>
           <p aria-live="polite" className="sr-only">
-            {copied ? 'Chave Pix copiada com sucesso.' : ''}
+            {copied === 'key'
+              ? 'Chave Pix copiada com sucesso.'
+              : copied === 'code'
+                ? 'Código Pix copia e cola copiado com sucesso.'
+                : ''}
           </p>
 
           {/* Como pagar — passos simples */}
@@ -161,10 +226,11 @@ export function PixSupportDialog({
               <li>Abra o aplicativo do seu banco.</li>
               <li>
                 Escolha <span className="font-medium text-foreground">Pix</span> →{' '}
-                <span className="font-medium text-foreground">Pagar com chave Pix</span>.
+                <span className="font-medium text-foreground">Pagar com QR Code</span> ou{' '}
+                <span className="font-medium text-foreground">Pix copia e cola</span>.
               </li>
-              <li>Cole a chave copiada e confirme.</li>
-              <li>Defina o valor que quiser contribuir e confirme o envio.</li>
+              <li>Escaneie o QR ao lado ou cole o código/chave copiado.</li>
+              <li>Confira o recebedor, defina o valor e confirme o envio.</li>
             </ol>
           </div>
 

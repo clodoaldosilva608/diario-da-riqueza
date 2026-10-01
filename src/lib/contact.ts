@@ -42,6 +42,21 @@ export const PIX_KEY_DISPLAY = '+55 81 971133707';
 /** Chave Pix normalizada (+55 + DDD + número) — valor usado ao copiar */
 export const PIX_KEY_NORMALIZED = '+5581971133707';
 
+/**
+ * BR Code oficial ("Pix copia e cola") gerado pelo banco do criador do projeto.
+ * O QR Code do modal é renderizado a partir deste payload exato, pré-validado:
+ * CRC16-CCITT recalculado confere (4614) e o PNG é verificado por decodificação
+ * (scripts/generate_pix_qr.py). Contém chave UUID aleatória do banco, recebedor
+ * e cidade — nada de valor ou cobrança automática (QR estático, valor livre).
+ */
+export const PIX_BR_CODE =
+  '00020126580014BR.GOV.BCB.PIX0136bde7ca55-faa9-4589-8a0f-abe387172552' +
+  '5204000053039865802BR5925Clodoaldo Conceicao Silva6009SAO PAULO' +
+  '62140510pMCJsdrOJX63044614';
+
+/** Nome do recebedor que consta no BR Code (confirmação antes de pagar) */
+export const PIX_RECEIVER_NAME = 'Clodoaldo Conceicao Silva';
+
 /** Nome do projeto exibido no modal de apoio (não é o nome do favorecido no banco) */
 export const PROJECT_NAME = 'Diário da Riqueza';
 
