@@ -333,3 +333,22 @@ Stage Summary:
 - 4 pop-ups em ciclo respeitoso (7 dias cada, máx. 2 por sessão)
 - Compartilhamento: menu nativo + 6 redes + copiar link, sem rastreamento
 - Domínio consolidado (308); explicação sobre local-first/outro dispositivo a entregar ao usuário
+
+---
+Task ID: 16
+Agent: Super Z (main agent)
+Task: Verificação pós-contexto do Task 15-b (seção do criador + redes no rodapé + pop-up seguir) — qualidade, produção e e2e
+
+Work Log:
+- Recuperado do contexto perdido: commit cddadd8 já implementava 100% do pedido (seção 'Conheça o criador' com botões 'Visitar meu site' e 'Conhecer e apoiar outros apps', rodapé 'Redes sociais' com Instagram/TikTok/YouTube/E-mail/Bio.site/Linktree, pop-up 'follow' 5º da rotação, SupportSection com card de seguir)
+- Limpeza do worktree: mudanças pendentes eram só bits de modo (100644↔100755) de PNGs/refs — restauradas via git checkout; commit bc5260c (scripts de extração do site pessoal) enviado a origin/main
+- Qualidade local reconfirmada: tsc 0 erros, eslint limpo, 242 testes (contact 30 + seed 55 + obsidian 66 + outreach 91) todos verdes
+- Produção verificada via bundle JS: handles clodoaldo_c_silva/clodoald_c_silva/clodoaldosilvaa, criadores-parceiros, bio.site e linktr.ee presentes no deploy
+- e2e produção (390×844, storage semeado com timestamps futuros exceto follow=null): pop-up 'Siga o projeto nas redes' apareceu após 40s com links Instagram/TikTok corretos, rel="noopener noreferrer", target=_blank; followNudgeLastAt persistido; nenhum pop-up em cadeia após 22s (rotação correta)
+- e2e landing produção: seção do criador com CREATOR_SECTION_INTRO + 2 botões; rodapé com CONTATO & APOIO + REDES SOCIAIS (12 links externos validados 100% noopener noreferrer, mailto exceção correta); zero erros de console
+- Screenshots: scripts/verify-follow-01-prod-popup.png, verify-follow-02-prod-criador.png, verify-follow-03-prod-footer.png
+
+Stage Summary:
+- Task 15-b (seção do criador + redes + pop-up seguir) confirmado COMPLETO e EM PRODUÇÃO (cddadd8 + bc5260c enviados)
+- 242 testes verdes, tsc/lint limpos, e2e de produção validado em mobile
+- Pendências herdadas intactas: nenhuma bloqueante; bugs de conta-duplicada já explicados no Task 15 (dois domínios, consolidado via 308)
