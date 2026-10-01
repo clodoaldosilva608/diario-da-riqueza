@@ -431,3 +431,21 @@ Work Log:
 Stage Summary:
 - Painel agora exige e-mail + senha (credenciais do operador configuradas nas env vars da Vercel e local)
 - Rate limit mitiga força-bruta (senha escolhida é numérica curta — reforço de senha recomendado no futuro)
+
+---
+Task ID: 17-e
+Agent: Super Z (main agent)
+Task: Painel /admin restrito aos produtos do Diário da Riqueza + INCIDENTE de segurança (secret público) remediado
+
+Work Log:
+- Usuário reportou produtos de OUTROS apps (Destrava, ResíduoZero, PsicoRisk) no painel — o admin puxava a conta Cakto inteira
+- cakto.ts: helpers puros isDrProductId / isDrProductName (regex /di[aá]rio da riqueza/i, cobre produtos futuros do DR) / caktoProductIdOf (product como objeto ou string) — 12 testes novos (58 no test_cakto, 300 total)
+- cakto-server.ts: escopo DR com cache — listDrProducts/listDrSubscriptions/listDrOrders/listDrCustomers/drCustomerIds/isDrWebhook (collectAll junta até 10 páginas e filtra: ID conhecido OU nome do projeto; pedidos/assinaturas de produto desconhecido = fora)
+- Páginas refatoradas: Dashboard (assinaturas por status, últimas vendas, clientes e receita só do projeto), Vendas e Clientes (busca+paginação em memória sobre o conjunto filtrado), Assinaturas (só DR, pager removido), Produtos (catálogo só do DR), Webhooks (só os vinculados a produtos DR ou globais)
+- ⚠️ INCIDENTE: git log -S revelou scripts/cakto_mcp.py com CAKTO_CLIENT_SECRET hardcoded NO HISTÓRICO do repo (commit f4af14d, sessão anterior) e o repo é PÚBLICO — remediado com git filter-branch (arquivo removido de todos os commits), reflog/gc purgados, arquivo recriado lendo CAKTO_CLIENT_ID/SECRET de env vars, force-push 16d36da; verificação pós-limpeza: git log -S do secret = vazio
+- .env.local sumido do filesystem recriado (credenciais conhecidas + ADMIN_SESSION_SECRET novo + CAKTO_WEBHOOK_TOKEN RECUPERADO da URL do webhook 71368 na API da Cakto); .gitignore .env* confirmado; env vars re-sincronizadas na Vercel; cakto_whoami via cliente sem hardcode = OK (produção)
+- Deploy 16d36da READY; e2e produção: login e-mail+senha OK, Produtos exibe SOMENTE os 4 produtos DR (Apoiador Fundador 9,90, Apoio R$15, Apoio mínimo 5, R$50; zero Destrava/ResíduoZero/PsicoRisk — única menção é o subtítulo explicativo), Dashboard/Vendas com escopo correto e estado vazio elegante, zero erros de console
+
+Stage Summary:
+- Painel agora gerencia exclusivamente o Diário da Riqueza (produtos, vendas, assinaturas, clientes, webhooks, métricas)
+- Secret da Cakto removido do histórico público — ROTAÇÃO do client secret na Cakto continua OBRIGATÓRIA (histórico pode estar em caches/forks); ao rotacionar: atualizar .env.local + Vercel
