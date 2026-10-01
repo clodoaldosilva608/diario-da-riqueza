@@ -286,3 +286,27 @@ Stage Summary:
 - Modal do QR Code Pix agora se adapta a qualquer tela: rola internamente, QR fluido, margens garantidas, nada cortado
 - Varredura leaf-most em 320/360/390px zerou overflow horizontal em todas as telas, incluindo tour guiado
 - Lembrete contínuo: revogar os tokens GitHub/Vercel compartilhados no chat
+
+---
+Task ID: 14
+Agent: Super Z (main agent)
+Task: Pop-ups (apoio + site/criadores parceiros), correção do QR mobile e hardening de segurança
+
+Work Log:
+- Criado src/lib/outreach.ts (cadência pura/testável: 7 dias, 40s inicial, cadeia 20s)
+- Criado src/components/support/OutreachDialogs.tsx: pop-up 1 apoio (abre PixSupportDialog existente) + pop-up 2 site pessoal (clodoaldo.vercel.app) e criadores parceiros (/criadores-parceiros), links target=_blank + noopener noreferrer; skipChain para não empilhar site sobre Pix
+- Store: supportNudgeLastAt/sitePromoLastAt + setters (persistidos, sem migration)
+- PixSupportDialog: QR fluido (branco w-full max-240px, img w-full) — correção do bug mobile do QR
+- page.tsx monta <OutreachDialogs /> após AppShell
+- next.config.ts: headers de segurança (CSP, HSTS, XFO DENY, nosniff, Referrer-Policy, Permissions-Policy, COOP) em todas as rotas
+- layout.tsx: metadataBase/openGraph → https://diariodariqueza.vercel.app
+- docs/SEGURANCA.md: RLS Supabase (SQL completo), firewall UFW/firewalld/iptables + hardening, Zod 3 camadas, DAST (ZAP/Nuclei), checklists produção
+- scripts/test_outreach.ts: 34 testes novos (185 total)
+- e2e agent-browser 390x844: pop-up apoio 40s OK; QR 216px sem overflow X; cadeia não empilha; pop-up site independente OK; links hrefs/rel OK; nova aba clodoaldo.vercel.app OK; zero violações CSP
+- Verificado domínio novo JÁ NO AR (usuário o adicionou no painel): HTTPS 200 + headers ativos; deploy automático via integração GitHub (push cc6066e → prod)
+- Token Vercel não disponível no ambiente (não necessário — deploy automático); segredo confirmado AUSENTE do git/worklog
+
+Stage Summary:
+- Commit cc6066e pushado main; produção atualizada nos dois domínios
+- 185 testes verdes, tsc/lint/build limpos
+- Novos artefatos: src/lib/outreach.ts, src/components/support/OutreachDialogs.tsx, scripts/test_outreach.ts, docs/SEGURANCA.md
