@@ -242,3 +242,47 @@ Stage Summary:
 - Produção com QR Code Pix real, válido e testado: https://diario-da-riqueza.vercel.app
 - QR estático offline (sem serviço externo); chave telefone mantida como alternativa
 - Lembrete contínuo: revogar os tokens GitHub/Vercel compartilhados no chat
+
+---
+Task ID: 12
+Agent: Super Z (main agent)
+Task: "verifique todas as paginas e rotas e seções... não estão adaptadas a dispositivos móveis... elementos sobrepondo... tour guiado não adaptado" — auditoria mobile completa + correções
+
+Work Log:
+- Auditoria sistemática em viewport 390x844 (agent-browser + eval de scrollWidth/elementos fora da viewport + screenshots por view): landing, onboarding, dashboard, diário, sonhos, orçamento, biblioteca, estatísticas, conquistas, ajuda, config, busca, Pix modal, tour
+- Falso culpado descartado: "avatar N" sobre a nav era o indicador de DevTools do Next.js (só existe em dev)
+- NAV MOBILE REFEITA (AppShell): antes 2 grades empilhadas (4+5 itens, 102px de altura) cobrindo conteúdo (main pb-24=96px < 102px) → agora linha ÚNICA com scroll horizontal (56px, min-w 64px/item, alvos ≥56px, indicador dourado no ativo, scrollbar oculta, aria-current, auto-scroll do item ativo ao trocar view e ao fechar o tour)
+- TOURGUIDE MOBILE: (a) bug grave do cartão centralizado — style transform translate(-50%,-50%) era SOBRESCRITO pelo transform da animação do framer-motion → cartão colado na borda direita e cortado embaixo; corrigido com centralização numérica; (b) altura real do cartão medida via ref (cardH) e top clampado à viewport; (c) passo final: 3 botões agora em grid próprio (1 coluna no mobile, 2 no sm) — antes "Registrar primeiro dia" com min-w-0 flex-1 espremia a ~19px e o texto vazava sobre "Voltar"; (d) alvos da nav com scroll horizontal: scrollIntoView inline center antes de medir o spotlight; (e) paddings p-4/sm:p-5, título text-base/sm:text-lg, max-h com overflow-y-auto
+- SETTINGS: botões de impressão ("Imprimir como está" + "Diário físico (capa)") estouravam 390px (R417) → w-full flex-wrap no mobile, ml-auto só no sm+; card "Ajuda e dados de exemplo" empilha no mobile (flex-col sm:flex-row) — texto não é mais espremido
+- LANDING: CTA final "Usar o Diário da Riqueza gratuitamente" estourava (R422, whitespace-nowrap do Button) → px-5/text-sm no mobile, sm:px-8/text-base, max-w-full
+- Heatmap min-w-[640px] e barras de progresso (sonhos/conquistas L-279) verificados: já dentro de containers overflow — comportamento intencional, mantidos
+- Validação: 151/151 testes (30+55+66), tsc limpo, ESLint limpo, build OK; e2e local + produção: 0 overflow de documento em TODAS as views, tour 10/10 navegável com spotlight correto e botões em 3 linhas sem sobreposição, nav 56px com item ativo sempre visível, landing/onboarding/Pix modal OK
+- Git: commit 8c4125e push main; deploy Vercel --prod OK (2m); validação pós-deploy no iPhone 14 (390px): overflow=false em todas as telas
+
+Stage Summary:
+- App 100% adaptado ao mobile: nav compacta com scroll, tour guiado mobile-first, zero sobreposições/overflow
+- Evidências: download/prod_mob_*.png e mob2_*.png
+- Lembrete contínuo: revogar tokens compartilhados no chat
+
+---
+Task ID: 13
+Agent: Super Z (main agent)
+Task: "a seção do codigo QR não está se adaptando ao tamanho da tela" + "quero que o domínio seja https://diariodariqueza.vercel.app"
+
+Work Log:
+- DOMÍNIO NOVO: diariodariqueza.vercel.app adicionado ao projeto via API Vercel (POST /v10/projects/prj_RmYNRk…/domains, verified:true) — ativo em ~5s servindo o app; domínio antigo diario-da-riqueza.vercel.app mantido (compat PWA instalado); /landing 308 confirma no novo domínio
+- CAUSA RAIZ DO QR: DialogContent (ui/dialog.tsx) sem max-height/scroll — modal do Pix ~1125px de conteúdo cortava em cima/embaixo em phones e não rolava; imagem QR com largura fixa 196px (mínimo ~300px com paddings); tailwind-merge anulava max-w-[calc(100%-2rem)] da base quando o consumidor passava max-w-md (dialog colado nas bordas, w=viewport)
+- FIX DIALOG BASE: max-h-[92dvh] + overflow-y-auto + overscroll-contain; w-[calc(100%-2rem)] max-w-[calc(100%-2rem)] sm:w-full sm:max-w-lg (margens de 16px garantidas mesmo com max-w do consumidor)
+- FIX MODAL PIX: p-4/gap-3 no mobile (sm:p-6/sm:gap-4), QR fluido (w-full max-w-[196px] h-auto), botões whitespace-normal + px-3
+- AUDITORIA AMPLA (scripts/overflow_detect.js — detector leaf-most via display:none + scrollWidth; detector por rect é cego p/ overflow de texto): StatCard (min-w-0+truncate+text-xl sm:text-2xl) cobrindo Dashboard/Orçamento/Estatísticas/Biblioteca; Dashboard stats 1 coluna <400px (min-[400px]:grid-cols-2); SectionHeader flex-wrap+min-w-0; Biblioteca linha do card flex-wrap + badges sem shrink-0; Config badges Obsidian whitespace-normal; Landing header: marca oculta abaixo de sm (cabe em 320px)
+- APRENDIZADO TÉCNICO: Turbopack dev com chunks de URL estável + cache HTTP do browser servem código VELHO mesmo após rm -rf .next — solução: agent-browser close (contexto novo) a cada bateria de testes; Command Palette (Cmd+K) abriu sem querer e contaminou medições (dialog fixo infla scrollWidth no headless)
+- VALIDAÇÃO LOCAL (320/360/390px): landing + 9 views + tour 10 passos + modal QR — 0 overflow, card do tour sempre na viewport, modal com margens 16px/scroll interno/Fechar acessível; copiar chave Pix: toast + estado "copiado" OK
+- VALIDAÇÃO PRODUÇÃO (diariodariqueza.vercel.app @320px): landing, views (diário/orçamento/biblioteca/estatísticas/config), modal QR e tour — tudo limpo; console sem erros; screenshots download/prod_modal_qr_320_diariodariqueza.png e final_modal_qr_320.png
+- Qualidade: 151/151 testes (30+55+66), tsc limpo, ESLint limpo, build OK; commit 255c24d push main; deploy --prod OK
+- Auto-commit de ruído 19eb201 (só PNGs de download/) descartado com reset --soft antes do commit
+
+Stage Summary:
+- NOVO DOMÍNIO PRINCIPAL: https://diariodariqueza.vercel.app (antigo segue no ar por compatibilidade)
+- Modal do QR Code Pix agora se adapta a qualquer tela: rola internamente, QR fluido, margens garantidas, nada cortado
+- Varredura leaf-most em 320/360/390px zerou overflow horizontal em todas as telas, incluindo tour guiado
+- Lembrete contínuo: revogar os tokens GitHub/Vercel compartilhados no chat
