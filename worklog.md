@@ -542,3 +542,21 @@ Stage Summary:
 - Entregues: download/divulgacao/ (20 PNGs 1080x1080, 82-122 KB cada) + legendas.md + kit-divulgacao-diario-da-riqueza.zip; fontes editáveis em marketing/images/ (20 SVGs)
 - Aprendizados: gradiente SVG não renderiza em elemento com bbox de altura zero (usar stroke sólido); pipeline SVG->PNG com fit automático de texto elimina a classe inteira de bugs de texto IA da Task 18
 - Scripts reutilizáveis: generate_social_svgs.py (editar POSTS para novos temas), verify_kit.py
+
+---
+Task ID: 19
+Agent: Super Z (main agent)
+Task: Seção Divulgação no /admin — material de divulgação acessível pelo site (usuário não conseguia baixar os arquivos locais)
+
+Work Log:
+- Copiado kit para public/marketing/ (20 PNGs 1080x1080 + kit-divulgacao-diario-da-riqueza.zip, 3.9 MB, servidos estáticos)
+- src/lib/marketing-posts.ts: 20 posts (slug, grupo, título, corpo, exatamente 4 hashtags) + postCaption() + buildCaptionsMarkdown() — espelha o legendas.md
+- /admin/(dash)/divulgacao: page.tsx (server: PageHeader + 4 MetricCards + guia Como usar + grid) e post-card.tsx (client: PostCard com copiar/baixar/abrir + DivulgacaoToolbar com ZIP e .md via Blob)
+- nav.tsx: item Divulgação (Megaphone) antes de Configurações
+- Validação: tsc sem erros em src/ (erros pré-existentes apenas em examples/skills), lint limpo (removida diretiva no-img-element desnecessária — regra já off), build OK (1º SIGKILL por OEM — rerun com NODE_OPTIONS max-old-space-size=3072), 346 checks verde
+- Commit e5f0bfa push main -> Vercel; produção verificada: /marketing/*.png 200 (20/20) + ZIP 200, /admin/divulgacao 307 (protegida)
+- E2E com agent-browser: login admin -> /admin/divulgacao renderiza (screenshot download/divulgacao_admin_check.png), item Divulgação ativo na sidebar, botão "Copiar legenda" muda para "Legenda copiada!"
+
+Stage Summary:
+- Entregue: seção Divulgação no painel admin com as 20 artes + 20 legendas prontas, download individual (PNG) ou em lote (ZIP com tudo, .md de legendas gerado no cliente)
+- Aprendizados: build OOM no ambiente -> usar NODE_OPTIONS="--max-old-space-size=3072"; agent-browser AGENT_BROWSER_SESSION não persiste entre chamadas do Bash -> encadear todo o fluxo em um único comando; screenshot flag é --full
