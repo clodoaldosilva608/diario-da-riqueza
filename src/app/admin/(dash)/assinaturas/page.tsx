@@ -11,7 +11,7 @@
  */
 
 import { listDrSubscriptions } from '@/lib/cakto-server';
-import { CaktoError, DateTime, StatusBadge, Td } from '../ui';
+import { CaktoError, DateTime, PageHeader, StatusBadge, Td } from '../ui';
 import { cancelSubscriptionAction } from '../../actions';
 
 export const dynamic = 'force-dynamic';
@@ -44,14 +44,10 @@ export default async function AdminSubscriptionsPage({
   }
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-bold">Assinaturas</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Recorrências dos produtos do Diário da Riqueza — inclui os
-          Apoiadores Fundadores. Assinaturas de outros apps da conta não
-          aparecem aqui.
-        </p>
-      </div>
+      <PageHeader
+        title="Assinaturas"
+        description="Recorrências dos produtos do Diário da Riqueza — inclui os Apoiadores Fundadores. Assinaturas de outros apps da conta não aparecem aqui."
+      />
 
       {ok ? (
         <p className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-emerald-500">

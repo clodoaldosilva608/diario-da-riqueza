@@ -177,6 +177,78 @@ export function Pager({
   );
 }
 
+/* ============================== CABEÇALHO DE PÁGINA ============================== */
+
+/**
+ * Cabeçalho padrão de página do painel: título, descrição opcional e
+ * ação opcional (slot livre, ex.: botão/link à direita).
+ */
+export function PageHeader({
+  title, description, action,
+}: {
+  title: string;
+  description?: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="min-w-0">
+        <h1 className="font-display text-2xl font-bold">{title}</h1>
+        {description ? (
+          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+            {description}
+          </p>
+        ) : null}
+      </div>
+      {action ? <div className="shrink-0">{action}</div> : null}
+    </div>
+  );
+}
+
+/* ============================== GRÁFICO DE BARRAS ============================== */
+
+/**
+ * MiniBars — gráfico de barras simples (server-safe, zero JS): receita
+ * por mês do dashboard. Altura proporcional ao valor máximo da série;
+ * mês com zero mostra barra mínima apagada.
+ */
+export function MiniBars({
+  data,
+}: {
+  data: { label: string; value: number; count?: number }[];
+}) {
+  const max = Math.max(...data.map((d) => d.value), 1);
+  return (
+    <div className="flex items-end gap-2 sm:gap-3">
+      {data.map((d) => {
+        const pct = Math.max(d.value > 0 ? 6 : 3, (d.value / max) * 100);
+        return (
+          <div key={d.label} className="flex min-w-0 flex-1 flex-col items-center gap-2">
+            <span className="whitespace-nowrap text-[10px] font-semibold text-muted-foreground">
+              {d.value > 0 ? BRL(d.value) : '—'}
+            </span>
+            <div className="flex h-32 w-full max-w-16 items-end overflow-hidden rounded-lg bg-muted/60">
+              <div
+                className={`w-full rounded-lg transition-all ${
+                  d.value > 0
+                    ? 'bg-gradient-to-t from-gold/50 to-gold'
+                    : 'bg-muted'
+                }`}
+                style={{ height: `${pct}%` }}
+                role="img"
+                aria-label={`${d.label}: ${BRL(d.value)} em ${d.count ?? 0} venda(s)`}
+              />
+            </div>
+            <span className="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">
+              {d.label}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /* ============================== ERRO / FORM ============================== */
 
 export function CaktoError({ error }: { error: unknown }) {

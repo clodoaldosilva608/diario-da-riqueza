@@ -249,3 +249,25 @@
     margin-bottom: 6mm;
   }
 }
+
+/* ============================================================
+   Ticker dos Fundadores (redline) — marquee contínuo.
+   Loop sem emenda: trilho com conteúdo duplicado e translateX
+   de -50%. Pausa no hover e respeita prefers-reduced-motion.
+   ============================================================ */
+@keyframes founder-ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.founder-ticker-track {
+  animation: founder-ticker 130s linear infinite;
+  will-change: transform;
+}
+.founder-ticker:hover .founder-ticker-track {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .founder-ticker-track {
+    animation: none;
+  }
+}

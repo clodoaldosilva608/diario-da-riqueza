@@ -7,7 +7,7 @@
  */
 
 import { listDrCustomers } from '@/lib/cakto-server';
-import { CaktoError, DateTime, Pager, SearchForm, Td } from '../ui';
+import { PageHeader, CaktoError, DateTime, Pager, SearchForm, Td } from '../ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,12 +37,10 @@ export default async function AdminCustomersPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-bold">Clientes</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Pessoas que apoiaram o Diário da Riqueza via checkout da Cakto.
-        </p>
-      </div>
+      <PageHeader
+        title="Clientes"
+        description="Pessoas que apoiaram o Diário da Riqueza via checkout da Cakto."
+      />
 
       <SearchForm
         action="/admin/clientes"

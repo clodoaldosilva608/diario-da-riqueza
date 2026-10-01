@@ -1,34 +1,52 @@
 /**
- * /admin/vendas — pedidos do Diário da Riqueza com busca e paginação.
+ * /admin/vendas — pedidos do Diário da Riqueza com busca, filtro por
+ * status e paginação.
  *
  * ESCOPO: somente pedidos de produtos deste projeto (outros apps da mesma
- * conta Cakto ficam de fora — ver listDrOrders). Busca e paginação são
- * aplicadas em memória sobre a janela filtrada (até 500 pedidos).
+ * conta Cakto ficam de fora — ver listDrOrders). Busca, filtro e paginação
+ * são aplicados em memória sobre a janela filtrada (até 500 pedidos).
  */
 
 import { listDrOrders } from '@/lib/cakto-server';
 import {
-  AdminTable, BRL, CaktoError, DateTime, Pager, SearchForm, StatusBadge, Td,
+  AdminTable, BRL, CaktoError, DateTime, PageHeader, Pager, SearchForm,
+  StatusBadge, Td,
 } from '../ui';
 
 export const dynamic = 'force-dynamic';
 
 const PAGE_SIZE = 20;
 
+/** Status que o operador pode filtrar (ordem de exibição) */
+const STATUS_FILTERS = [
+  'approved', 'pending', 'waiting_payment', 'refused',
+  'refunded', 'canceled', 'chargeback',
+] as const;
+
 export default async function AdminOrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; q?: string }>;
+  searchParams: Promise<{ page?: string; q?: string; status?: string }>;
 }) {
-  const { page: pageStr, q } = await searchParams;
+  const { page: pageStr, q, status: statusParam } = await searchParams;
   const page = Math.max(1, Number(pageStr ?? '1') || 1);
   const search = (q ?? '').trim();
+  const statusFilter = STATUS_FILTERS.includes(
+    (statusParam ?? '') as (typeof STATUS_FILTERS)[number],
+  )
+    ? statusParam!
+    : '';
 
   let all: Awaited<ReturnType<typeof listDrOrders>>['data'] = [];
+  let window: Awaited<ReturnType<typeof listDrOrders>>['data'] = [];
   let error: unknown = null;
   try {
     const res = await listDrOrders();
+    window = res.data;
     all = res.data;
+    if (statusFilter) {
+      all = all.filter((o) => o.status === statusFilter);
+    }
     if (search) {
       const needle = search.toLowerCase();
       all = all.filter((o) => {
@@ -46,26 +64,73 @@ export default async function AdminOrdersPage({
     error = e;
   }
 
+  // Contagens por status sobre a janela completa (fora do filtro atual)
+  const counts = new Map<string, number>();
+  for (const o of window) {
+    if (o.status) counts.set(o.status, (counts.get(o.status) ?? 0) + 1);
+  }
+
   const total = all.length;
   const start = (page - 1) * PAGE_SIZE;
   const rows = all.slice(start, start + PAGE_SIZE);
   const hasMore = start + PAGE_SIZE < total;
 
+  const qs = (over: Record<string, string>) => {
+    const params = new URLSearchParams();
+    if (search) params.set('q', search);
+    const status = over.status ?? statusFilter;
+    if (status) params.set('status', status);
+    const s = params.toString();
+    return `/admin/vendas${s ? `?${s}` : ''}`;
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-bold">Vendas</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Pedidos dos produtos do Diário da Riqueza — apoios únicos e
-          renovações. Pedidos de outros apps da conta não aparecem aqui.
-        </p>
-      </div>
+      <PageHeader
+        title="Vendas"
+        description="Pedidos dos produtos do Diário da Riqueza — apoios únicos e renovações. Pedidos de outros apps da conta não aparecem aqui."
+      />
 
       <SearchForm
         action="/admin/vendas"
         placeholder="Buscar por cliente, e-mail ou ID do pedido…"
         defaultValue={search}
+        hidden={statusFilter ? { status: statusFilter } : undefined}
       />
+
+      {/* Filtro por status */}
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por status">
+        <a
+          href={qs({ status: '' })}
+          aria-current={!statusFilter ? 'true' : undefined}
+          className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+            !statusFilter
+              ? 'border-gold/50 bg-gold/10 text-gold'
+              : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
+          }`}
+        >
+          Todos
+        </a>
+        {STATUS_FILTERS.map((s) => {
+          const active = statusFilter === s;
+          const n = counts.get(s) ?? 0;
+          return (
+            <a
+              key={s}
+              href={qs({ status: s })}
+              aria-current={active ? 'true' : undefined}
+              className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                active
+                  ? 'border-gold/50 bg-gold/10 text-gold'
+                  : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
+              }`}
+            >
+              <StatusBadge status={s} />
+              {n > 0 ? <span className="tabular-nums opacity-70">{n}</span> : null}
+            </a>
+          );
+        })}
+      </div>
 
       {error ? (
         <CaktoError error={error} />
@@ -98,7 +163,7 @@ export default async function AdminOrdersPage({
           </AdminTable>
           {rows.length > 0 ? (
             <Pager
-              base={`/admin/vendas${search ? `?q=${encodeURIComponent(search)}` : ''}`}
+              base={qs({})}
               page={page}
               hasMore={hasMore}
             />

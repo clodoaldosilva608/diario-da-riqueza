@@ -28,6 +28,7 @@ import {
 import { PixSupportDialog } from '@/components/support/PixSupportDialog';
 import { SupportOptions } from './SupportOptions';
 import { FounderWall } from './FounderWall';
+import { FounderTicker } from './FounderTicker';
 import {
   BIO_SITE_URL, CONTACT_EMAIL, CONTACT_EMAIL_URL, CREATOR_SECTION_INTRO,
   INSTAGRAM_HANDLE, INSTAGRAM_URL, LINKTREE_URL, PARTNERS_URL,
@@ -293,6 +294,9 @@ export function LandingPage({ onEnter, enterLabel = 'Começar gratuitamente', on
             </ul>
           </div>
         </section>
+
+        {/* ====================== TICKER DOS FUNDADORES (redline) ====================== */}
+        <FounderTicker />
 
         {/* ============================ COMO FUNCIONA ============================ */}
         <section id="como-funciona" aria-labelledby="como-funciona-titulo" className="scroll-mt-20 border-t border-border/60">

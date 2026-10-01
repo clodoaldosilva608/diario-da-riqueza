@@ -11,7 +11,7 @@
 
 import { listWebhooks, isDrWebhook } from '@/lib/cakto-server';
 import { CAKTO_WEBHOOK_EVENTS } from '@/lib/cakto';
-import { CaktoError, DateTime, StatusBadge, Td } from '../ui';
+import { PageHeader, CaktoError, DateTime, StatusBadge, Td } from '../ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,14 +27,10 @@ export default async function AdminWebhooksPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-bold">Webhooks</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Integrações de eventos da Cakto. O endpoint desta aplicação é{' '}
-          <code className="font-mono text-xs">/api/cakto/webhook?key=…</code> (token
-          em variável de ambiente — nunca público).
-        </p>
-      </div>
+      <PageHeader
+        title="Webhooks"
+        description="Integrações de eventos da Cakto. O endpoint desta aplicação é /api/cakto/webhook?key=… (token em variável de ambiente — nunca público)."
+      />
 
       {error ? (
         <CaktoError error={error} />
