@@ -504,3 +504,21 @@ Stage Summary:
 - Veredicto: PRONTA para divulgação — scorecard 7 dimensões (funcionalidade 9,5; PWA 9,5; social 9,0; segurança 9,0; conformidade 9,0; escala 8,5; acessibilidade 7,5)
 - Plano de ação priorizado no relatório: P1 analytics + senha admin forte; P2 domínio próprio, uptime, og:image com print do app; P3 zoom, testes iOS físico
 - E2E-2148 todos os fluxos de usuário validados em produção na data da auditoria
+---
+Task ID: 18
+Agent: Super Z (main agent)
+Task: Criar 20 imagens de divulgação do Diário da Riqueza para redes sociais + legendas prontas (título + 4 hashtags) para publicar
+
+Work Log:
+- scripts/generate_social_images.mjs: gerador batch com z-ai-web-dev-sdk (retry 3x, skip de arquivos existentes, seleção por --from/--to/--only), saída em download/divulgacao/
+- 20 conceitos alinhados à marca (obsidiana #09090b + dourado #d4af37, tom "organização/consistência" sem promessas de enriquecimento): hero, offline, privacidade, sem cadastro, metas, orçamento, evolução, gamificação, estudos, diário, streak, instalação PWA, cofrinho, citação, mural fundadores, apoio, fundador ouro, dia a dia no ônibus, story CTA grátis, story desafio 30 dias
+- Formatos: 14 posts 1:1 (1024x1024) + 4 verticais 3:4 (864x1152) + 2 stories 9:16 (736x1312 — 720x1440 rejeitado pela API, não é múltiplo de 32)
+- Verificação visual das 20 artes via leitura de imagem: pegou 7 problemas de texto IA — hex codes vazados no hero (BRAND tinha "hex 09090b" → removido), "Diario" sem acento, ₿ Bitcoin em 2 artes, texto chinês ("升级", "荣誉墙", "当前一"), dias da semana em inglês com typo, chuva binária no badge; todos regenerados com prompts reforçados ("no letters", "no chinese characters")
+- Padrão vencedor para texto em imagem: arte de fundo por IA SEM texto + tipografia real composta por PIL/Playfair Display (baixada de google/fonts p/ assets/fonts/) — scripts/compose_quote_14.py (citação "Riqueza se constrói na disciplina de cada dia." + assinatura dourada) e scripts/compose_streak_11.py (grade exata 1-30 com dia 30 destacado — IA pulava/repetia números)
+- download/divulgacao/legendas.txt: 20 legendas completas prontas para publicar (título + corpo + 4 hashtags cada, PT-BR), com guia de uso (formato por rede, ordem diária, link diariodariqueza.vercel.app nos CTAs) e notas (sem promessas financeiras, hashtags com acento = marca)
+- Inventário final: 20 PNG (53-926 KB) + legendas.txt (17 KB), dimensões conferidas por PIL
+
+Stage Summary:
+- Kit de divulgação completo em download/divulgacao/: 20 imagens aprovadas visualmente (zero texto errado/garbled) + 20 legendas copy-paste prontas
+- Scripts reutilizáveis para regenerar/ampliar o kit: generate_social_images.mjs (--only N), compose_quote_14.py, compose_streak_11.py
+- Aprendizado registrado: nunca passar hex codes em prompt (vazam como texto); contagens exatas e palavras longas em imagem = compor via PIL sobre fundo IA
