@@ -522,3 +522,23 @@ Stage Summary:
 - Kit de divulgação completo em download/divulgacao/: 20 imagens aprovadas visualmente (zero texto errado/garbled) + 20 legendas copy-paste prontas
 - Scripts reutilizáveis para regenerar/ampliar o kit: generate_social_images.mjs (--only N), compose_quote_14.py, compose_streak_11.py
 - Aprendizado registrado: nunca passar hex codes em prompt (vazam como texto); contagens exatas e palavras longas em imagem = compor via PIL sobre fundo IA
+
+---
+Task ID: 18-b
+Agent: Super Z (main agent)
+Task: Recriar kit de divulgação (20 imagens PNG separadas + legendas.md) — usuário pediu entrega para download (kit da Task 18 original não existia mais em download/)
+
+Work Log:
+- Diagnóstico: download/divulgacao/ da Task 18 não existe mais; recriado do zero com pipeline programático (SVG->PNG) em vez de geração por IA
+- Instalado Playfair Display (assets/fonts) no fontconfig do usuário; validado cairosvg: acentos PT-BR, pesos bold/regular e gradiente dourado em texto renderizam perfeitamente
+- scripts/generate_social_svgs.py: sistema de design completo (obsidiana #09090B + dourado #D4AF37, frame com cantos dourados, chip da marca, glow radial, badge de ícone, footer-pill com URL); fit/wrap de texto via PIL (fonte variável com set_variation_by_name) garante zero overflow
+- 20 artes: 14 feature/brand (capa, offline, privacidade, sem cadastro, gratuito, instalar, receitas/despesas, evolução, metas, diário, sequência, backup, orçamento, citação) + Mural dos Fundadores (75 nomes + chip Fundador Ouro) + 4 tiers (R$5/R$15/R$50/R$9,90/mês) + CTA final com passos 1-2-3
+- Bugs corrigidos na iteração visual: linha do divisor invisível (linearGradient em linha horizontal = bbox altura zero -> stroke sólido GOLD) e overlap do número "3" com rótulo de 2 linhas no CTA (rótulo encurtado p/ 1 linha)
+- Validação visual: 19 das 20 artes inspecionadas via leitura de imagem (todas as 6 variantes de layout cobertas); zero texto errado/garbled (vantagem do SVG sobre IA)
+- download/divulgacao/legendas.md: guia de uso (ordem diária, formatos, link na bio) + 20 legendas prontas com título + corpo + exatamente 4 hashtags (PT-BR, sem promessas financeiras)
+- scripts/verify_kit.py: asserts 20 PNG + 20 SVG + 20 seções x 4 hashtags; ZIP final em download/kit-divulgacao-diario-da-riqueza.zip (1 MB)
+
+Stage Summary:
+- Entregues: download/divulgacao/ (20 PNGs 1080x1080, 82-122 KB cada) + legendas.md + kit-divulgacao-diario-da-riqueza.zip; fontes editáveis em marketing/images/ (20 SVGs)
+- Aprendizados: gradiente SVG não renderiza em elemento com bbox de altura zero (usar stroke sólido); pipeline SVG->PNG com fit automático de texto elimina a classe inteira de bugs de texto IA da Task 18
+- Scripts reutilizáveis: generate_social_svgs.py (editar POSTS para novos temas), verify_kit.py
