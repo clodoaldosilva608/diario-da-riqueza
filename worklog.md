@@ -413,3 +413,21 @@ Work Log:
 
 Stage Summary:
 - Caminho para o painel agora descobrível pelo rodapé (discreto, com escudo); proteção do /admin inalterada (senha + 307)
+
+---
+Task ID: 17-d
+Agent: Super Z (main agent)
+Task: Login do /admin com e-mail + senha (credenciais definidas pelo operador) + rate limit
+
+Work Log:
+- admin-auth.ts: ADMIN_EMAIL entra no fail-closed (adminConfigured exige as 3 env vars); checkPassword → checkCredentials(email, senha) com comparações timing-safe nos dois campos (e-mail normalizado trim+lowercase); rate limit 1ª instância em memória: 5 tentativas/15 min por IP (x-real-ip/x-forwarded-for), janela resetável, varredura oportunista do Map
+- actions.ts: loginAction lê email+password do FormData, bloqueia IP estourado (?erro=rate), registra falha e limpa no sucesso
+- login/page.tsx: campo 'E-mail do operador' (type=email, autoComplete=username, autoFocus) + senha; erros: 'E-mail ou senha incorretos' / 'Muitas tentativas...' / 'não configurado'
+- .env.local + Vercel: ADMIN_EMAIL criado e ADMIN_PASSWORD atualizado via scripts/vercel_env_setup.py (6 vars, HTTP 201; valores nunca ecoados)
+- docs/CAKTO.md: tabela de env vars atualizada
+- Qualidade: tsc 0 erros, eslint limpo, 288 testes verdes, build OK
+- Deploy 416fc99 → READY; e2e produção: formulário com 2 campos, credenciais erradas exibem 'E-mail ou senha incorretos' (verify-admin-07), credenciais corretas entram no Dashboard (verify-admin-08/09); proteção /admin→307 intacta
+
+Stage Summary:
+- Painel agora exige e-mail + senha (credenciais do operador configuradas nas env vars da Vercel e local)
+- Rate limit mitiga força-bruta (senha escolhida é numérica curta — reforço de senha recomendado no futuro)
