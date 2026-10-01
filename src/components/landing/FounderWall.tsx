@@ -14,10 +14,16 @@
  * Privacidade: nenhum nome completo/e-mail sai do servidor. Estados:
  * carregando (skeletons) e populado — o mural nunca fica vazio, pois as
  * camadas 1 e 2 são locais; a camada real é somada a elas.
+ *
+ * Recolhido por padrão: a grade mostra só os primeiros nomes
+ * (PREVIEW_COUNT) e um botão "Ver todos os nomes" expande a lista
+ * completa; expandido, o botão vira "Mostrar menos" e recolhe de volta.
  */
 
 import { useEffect, useState } from 'react';
-import { Crown, HeartHandshake, ShieldCheck, Sparkles } from 'lucide-react';
+import {
+  ChevronDown, ChevronUp, Crown, HeartHandshake, ShieldCheck, Sparkles,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   CAKTO_FOUNDER_CHECKOUT_URL, CAKTO_FOUNDER_PRICE, initialsOf,
@@ -33,9 +39,13 @@ interface FoundersResponse {
   founders?: FounderEntry[];
 }
 
+/** Quantidade de nomes visíveis no mural recolhido (antes de expandir) */
+const PREVIEW_COUNT = 8;
+
 export function FounderWall() {
   const [loading, setLoading] = useState(true);
   const [real, setReal] = useState<FounderEntry[]>([]);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -162,8 +172,11 @@ export function FounderWall() {
                     ? '1 fundador sustentando o projeto'
                     : `${total} fundadores sustentando o projeto`}
                 </p>
-                <ul className="mx-auto grid max-w-4xl grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-                  {rest.map((f, i) => (
+                <ul
+                  id="mural-grade-fundadores"
+                  className="mx-auto grid max-w-4xl grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4"
+                >
+                  {(expanded ? rest : rest.slice(0, PREVIEW_COUNT)).map((f, i) => (
                     <li
                       key={`${f.name}-${i}`}
                       className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 transition-colors hover:border-gold/40"
@@ -194,6 +207,29 @@ export function FounderWall() {
                     </li>
                   ))}
                 </ul>
+
+                {/* Recolhido por padrão — botão expande/recolhe a lista completa */}
+                {rest.length > PREVIEW_COUNT ? (
+                  <div className="mt-5 text-center">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setExpanded((v) => !v)}
+                      aria-expanded={expanded}
+                      aria-controls="mural-grade-fundadores"
+                      className="h-11 border-gold/40 bg-gold/5 px-6 text-sm font-semibold text-gold hover:bg-gold/15 hover:text-gold"
+                    >
+                      {expanded ? (
+                        <ChevronUp className="h-4 w-4" aria-hidden="true" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                      )}
+                      {expanded
+                        ? 'Mostrar menos'
+                        : `Ver todos os ${rest.length} nomes`}
+                    </Button>
+                  </div>
+                ) : null}
               </div>
 
               <div className="text-center">
