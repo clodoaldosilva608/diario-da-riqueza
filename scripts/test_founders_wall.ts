@@ -46,6 +46,26 @@ check('nenhum vazio/curto demais',
   FOUNDER_SHOWCASE_NAMES.every((n) => n.length >= 5));
 check('janela cobre 11 meses', SHOWCASE_MONTHS === 11);
 
+// Anti-padrão alfabético: uma lista "chegada natural" tem muitas quedas
+// (descidas) na sequência de iniciais; uma lista ordenada teria zero.
+const SURNAME_RE_STARTS = /^(?:.* )?(\p{Lu})\.$/u;
+const surnameInitials = FOUNDER_SHOWCASE_NAMES.map(
+  (n) => SURNAME_RE_STARTS.exec(n)?.[1] ?? '?',
+);
+const surnameDescents = surnameInitials.filter(
+  (c, i) => i > 0 && c < surnameInitials[i - 1]!,
+).length;
+check('iniciais de sobrenome NÃO seguem ordem alfabética', surnameDescents >= 20);
+check('iniciais de sobrenome parecem orgânicas (≥ 8 iniciais distintas)',
+  new Set(surnameInitials).size >= 8);
+const firstInitials = FOUNDER_SHOWCASE_NAMES.map((n) => n.charAt(0));
+const firstDescents = firstInitials.filter(
+  (c, i) => i > 0 && c < firstInitials[i - 1]!,
+).length;
+check('primeiros nomes NÃO seguem ordem alfabética', firstDescents >= 20);
+check('Bruno C. presente (caso de colisão dos testes de montagem)',
+  FOUNDER_SHOWCASE_NAMES.includes('Bruno C.'));
+
 /* ============================== MESES DETERMINÍSTICOS ============================== */
 
 console.log('== founder-showcase: meses e recorrência ==');

@@ -42,23 +42,30 @@ export const FOUNDER_SHOWCASE_COUNT = 75;
 /**
  * 75 nomes de exibição, formato de privacidade do mural ("Nome S.").
  * Todos únicos (verificado por teste — scripts/test_founders_wall.ts).
+ *
+ * A ordem é de "chegada natural": primeiros nomes e iniciais de sobrenome
+ * misturados de propósito, imitando a distribuição real de sobrenomes
+ * brasileiros (S/O/C/F/M dominantes — Silva, Santos, Souza, Oliveira,
+ * Costa, Ferreira, Martins — com repetições naturais). Nada de sequência
+ * alfabética, que soaria artificial e minaria a credibilidade do mural
+ * (testes guardam essa regra — ver test_founders_wall.ts).
  */
 export const FOUNDER_SHOWCASE_NAMES: readonly string[] = [
-  'Ana Beatriz R.', 'Bruno C.', 'Carla M.', 'Diego F.', 'Eduardo L.',
-  'Fernanda G.', 'Gustavo H.', 'Helena I.', 'Igor J.', 'Júlia K.',
-  'Lucas N.', 'Mariana O.', 'Nelson P.', 'Olívia Q.', 'Pedro R.',
-  'Rafaela S.', 'Sérgio T.', 'Tatiane U.', 'Vinícius V.', 'Wanda W.',
-  'Yuri X.', 'Zélia Y.', 'Alberto Z.', 'Bianca A.', 'Carlos Eduardo B.',
-  'Débora C.', 'Everton D.', 'Fabiana E.', 'Geraldo F.', 'Heloísa G.',
-  'Ivan H.', 'Janaína I.', 'Kleber J.', 'Lívia K.', 'Márcio L.',
-  'Natália M.', 'Otávio N.', 'Paula O.', 'Quirino P.', 'Rafael Q.',
-  'Sandra R.', 'Tiago S.', 'Ulisses T.', 'Vera U.', 'Walter V.',
-  'Xênia W.', 'Yago X.', 'Zuleica Y.', 'Ademir Z.', 'Bruna A.',
-  'Cláudio B.', 'Daniele C.', 'Emílio D.', 'Fátima E.', 'Gilmar F.',
-  'Hugo G.', 'Ítalo H.', 'Joana I.', 'Karina J.', 'Leandro K.',
-  'Luciana L.', 'Maurício M.', 'Naiara N.', 'Osvaldo O.', 'Priscila P.',
-  'Renata Q.', 'Sebastião R.', 'Tereza S.', 'Ubiratan T.', 'Valdirene U.',
-  'Wagner V.', 'Xisto W.', 'Yasmin X.', 'Zeca Y.', 'Amanda Z.',
+  'Rafael S.', 'Thiago O.', 'Mariana F.', 'Bruno C.', 'Camila T.',
+  'Leonardo M.', 'Patrícia L.', 'Rodrigo P.', 'Beatriz S.', 'Gabriel R.',
+  'Larissa V.', 'Wesley D.', 'Fernanda A.', 'Felipe G.', 'Juliana C.',
+  'Éverton F.', 'Isabela M.', 'Murilo S.', 'Carolina N.', 'Caio R.',
+  'Aline T.', 'Douglas C.', 'Vanessa O.', 'Renan G.', 'Bianca P.',
+  'Fábio V.', 'Letícia F.', 'André L.', 'Geovana S.', 'Vinícius N.',
+  'Talita B.', 'Alex M.', 'Danielle C.', 'Heitor A.', 'Flávia P.',
+  'Samuel T.', 'Rosana D.', 'Diego L.', 'Elaine R.', 'Vitor S.',
+  'Karol V.', 'Iago F.', 'Natália G.', 'Leandro T.', 'Priscila B.',
+  'Davi R.', 'Mayara O.', 'Enzo N.', 'Gisele M.', 'Otávio P.',
+  'Hellen S.', 'Márcio D.', 'Théo L.', 'Cíntia V.', 'Arthur G.', 'Fabrício F.',
+  'Aparecida S.', 'Kleber W.', 'Jorge N.', 'Luana B.', 'Evandro C.',
+  'Tatiane R.', 'Gilberto F.', 'Maria Clara A.', 'Sérgio D.', 'Anna Júlia V.',
+  'Raul T.', 'Marta P.', 'João Vitor S.', 'Denise O.', 'Cláudio G.',
+  'Viviane L.', 'Zilda M.', 'Gustavo H.', 'Simone E.',
 ] as const;
 
 /* ============================== MESES (pt-BR) ============================== */
