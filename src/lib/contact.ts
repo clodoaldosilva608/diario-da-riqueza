@@ -66,6 +66,32 @@ export const PIX_SUPPORT_INTRO =
   'você pode contribuir com qualquer valor via Pix. O apoio é opcional e o ' +
   'acesso à ferramenta continua gratuito.';
 
+/* ============================== SITE PESSOAL / CRIADORES PARCEIROS ============================== */
+
+/**
+ * Site pessoal do criador — vitrine de todos os projetos desenvolvidos
+ * por conta própria. Links abertos em nova aba (sempre com
+ * rel="noopener noreferrer" nos componentes, cortando window.opener).
+ */
+export const PERSONAL_SITE_URL = 'https://clodoaldo.vercel.app/';
+
+/** Página "Criadores Parceiros" — conhecer e apoiar os outros apps */
+export const PARTNERS_URL = 'https://clodoaldo.vercel.app/criadores-parceiros';
+
+/** Texto do pop-up de divulgação do site (contexto: projetos independentes) */
+export const SITE_PROMO_INTRO =
+  'Todos os meus projetos são desenvolvidos por conta própria, apenas com o ' +
+  'apoio voluntário de diversas pessoas. O objetivo é sempre aprender e ' +
+  'buscar oferecer as aplicações de forma gratuita. Visite meu site para ' +
+  'ficar por dentro de tudo o que estou desenvolvendo.';
+
+/** Texto do pop-up de apoio (pedido discreto, valor livre) */
+export const SUPPORT_NUDGE_INTRO =
+  'O Diário da Riqueza é gratuito e feito por uma única pessoa, nas horas ' +
+  'livres. Se ele está te ajudando, considere apoiar com qualquer valor — ' +
+  'de R$ 1 ao que você puder. É o apoio voluntário que mantém o projeto no ' +
+  'ar e permite que ele continue 100% gratuito para todos.';
+
 /**
  * Normaliza uma chave Pix do tipo telefone para o padrão E.164 brasileiro
  * (+55 + DDD + número), aceitando as variações mais comuns de digitação:

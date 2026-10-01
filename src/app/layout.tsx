@@ -21,7 +21,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://diario-da-riqueza.vercel.app"),
+  metadataBase: new URL("https://diariodariqueza.vercel.app"),
   title: "Diário da Riqueza — Organize metas, orçamento e hábitos com consistência",
   description:
     "Diário da Riqueza: organize suas metas, orçamento, estudos e hábitos em uma ferramenta simples, gratuita e focada em consistência.",
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "pt_BR",
-    url: "https://diario-da-riqueza.vercel.app",
+    url: "https://diariodariqueza.vercel.app",
     siteName: "Diário da Riqueza",
     title: "Diário da Riqueza — Transforme seus objetivos em uma prática diária",
     description:

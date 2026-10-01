@@ -20,6 +20,7 @@ import { AchievementsView } from '@/components/achievements/AchievementsView';
 import { SettingsView } from '@/components/settings/SettingsView';
 import { HelpView } from '@/components/help/HelpView';
 import { TourGuide } from '@/components/shared/TourGuide';
+import { OutreachDialogs } from '@/components/support/OutreachDialogs';
 import { PrintJournal } from '@/components/print/PrintJournal';
 import { XPCelebration } from '@/components/shared/ui-kit';
 import { useDailyReminder, useAutoBackup } from '@/hooks/useReminder';
@@ -123,6 +124,9 @@ export default function Home() {
 
       {/* Tour guiado de primeira visita (também acionável em Ajuda/Configurações) */}
       <TourGuide />
+
+      {/* Pop-ups de apoio e de divulgação do site (cadência 7 dias, 1x/sessão) */}
+      <OutreachDialogs />
 
       {/* Layout físico impresso (só aparece na impressão) */}
       <PrintJournal />

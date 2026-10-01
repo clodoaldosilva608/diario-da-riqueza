@@ -129,16 +129,18 @@ export function PixSupportDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* QR Code — BR Code oficial do banco (PNG estático, offline) */}
+        {/* QR Code — BR Code oficial do banco (PNG estático, offline).
+            Fluído: o branco escala com a tela (max 240px) e o QR preenche
+            100% da largura disponível — nunca estoura em telas pequenas. */}
         <div className="space-y-3">
-          <div className="rounded-2xl border border-border bg-muted/40 p-4">
-            <div className="mx-auto w-fit max-w-full rounded-xl bg-white p-3 shadow-sm">
+          <div className="rounded-2xl border border-border bg-muted/40 p-3 sm:p-4">
+            <div className="mx-auto w-full max-w-[240px] rounded-xl bg-white p-3 shadow-sm">
               <img
                 src={pixQrSrc.src}
                 alt={`QR Code Pix do projeto ${PROJECT_NAME} — escaneie com o app do seu banco para apoiar`}
                 width={196}
                 height={196}
-                className="block h-auto w-full max-w-[196px]"
+                className="block h-auto w-full"
                 loading="eager"
                 decoding="async"
               />

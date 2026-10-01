@@ -38,6 +38,10 @@ interface AppState {
   landingOpen: boolean;
   /** Escopo de impressão física */
   printPhysical: boolean;
+  /** Última exibição do pop-up de apoio (epoch ms, null = nunca) — persistido */
+  supportNudgeLastAt: number | null;
+  /** Última exibição do pop-up do site/criadores parceiros (epoch ms, null = nunca) */
+  sitePromoLastAt: number | null;
   /** Tour guiado de primeira visita (persistido) */
   tourDone: boolean;
   /** Tour aberto agora (transiente) */
@@ -60,6 +64,8 @@ interface AppState {
   setLandingSeen: (v: boolean) => void;
   setLandingOpen: (v: boolean) => void;
   setPrintPhysical: (v: boolean) => void;
+  setSupportNudgeShown: (at: number) => void;
+  setSitePromoShown: (at: number) => void;
   setTourDone: (v: boolean) => void;
   setTourOpen: (v: boolean) => void;
   celebrate: (xp: number, message: string) => void;
@@ -91,6 +97,8 @@ export const useAppStore = create<AppState>()(
       landingSeen: false,
       landingOpen: false,
       printPhysical: false,
+      supportNudgeLastAt: null,
+      sitePromoLastAt: null,
       tourDone: false,
       tourOpen: false,
       celebration: null,
@@ -111,6 +119,8 @@ export const useAppStore = create<AppState>()(
       setLandingSeen: (v) => set({ landingSeen: v }),
       setLandingOpen: (v) => set({ landingOpen: v }),
       setPrintPhysical: (v) => set({ printPhysical: v }),
+      setSupportNudgeShown: (at) => set({ supportNudgeLastAt: at }),
+      setSitePromoShown: (at) => set({ sitePromoLastAt: at }),
       setTourDone: (v) => set({ tourDone: v }),
       setTourOpen: (v) => set({ tourOpen: v }),
       celebrate: (xp, message) => set({ celebration: { xp, message } }),
