@@ -466,7 +466,7 @@ export function LandingPage({ onEnter, enterLabel = 'Começar gratuitamente', on
               </p>
               <Button
                 onClick={onEnter}
-                className="mt-8 h-12 px-8 text-base font-semibold bg-gold text-black hover:bg-gold-light"
+                className="mt-8 h-12 max-w-full px-5 text-sm font-semibold bg-gold text-black hover:bg-gold-light sm:px-8 sm:text-base"
               >
                 Usar o Diário da Riqueza gratuitamente
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />

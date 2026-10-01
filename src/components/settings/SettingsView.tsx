@@ -423,7 +423,7 @@ export function SettingsView() {
             <Printer className="h-4 w-4 text-gold" />
             <span className="text-sm font-semibold">Impressão</span>
             <span className="text-xs text-muted-foreground">— como está no app ou diário físico formatado</span>
-            <div className="ml-auto flex gap-2">
+            <div className="flex w-full flex-wrap gap-2 sm:ml-auto sm:w-auto sm:justify-end">
               <Button
                 variant="outline"
                 size="sm"
@@ -540,15 +540,17 @@ export function SettingsView() {
               Central de Ajuda (FAQ)
             </Button>
           </div>
-          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border p-3">
-            <Database className="h-4 w-4 shrink-0 text-gold" />
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold">
-                {liveExamples} registro(s) de exemplo
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Dias de diário, metas, sonhos, orçamento e estudos — editáveis como qualquer registro.
-              </p>
+          <div className="flex flex-col gap-3 rounded-xl border border-border p-3 sm:flex-row sm:items-center">
+            <div className="flex min-w-0 flex-1 items-start gap-2">
+              <Database className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold">
+                  {liveExamples} registro(s) de exemplo
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Dias de diário, metas, sonhos, orçamento e estudos — editáveis como qualquer registro.
+                </p>
+              </div>
             </div>
             <Button
               variant="destructive"

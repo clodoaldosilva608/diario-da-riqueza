@@ -9,7 +9,7 @@
  * Passos: boas-vindas → 8 áreas → conclusão com atalhos.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpenCheck, NotebookPen, Target, Wallet, LibraryBig, BarChart3, Trophy,
@@ -98,10 +98,11 @@ export function TourGuide() {
 
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
+  const [cardH, setCardH] = useState(260);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const current = STEPS[step];
   const isLast = step === STEPS.length - 1;
-  const centered = !current.targetId || !rect;
 
   const close = useCallback(
     (done = true) => {
@@ -124,6 +125,14 @@ export function TourGuide() {
       document.querySelectorAll<HTMLElement>(`[data-tour="${targetId}"]`),
     );
     const visible = candidates.find((el) => el.offsetParent !== null) ?? null;
+    // Nav mobile com scroll horizontal: traz o alvo para a área visível antes
+    // de medir, senão o spotlight apontaria para um item fora da tela.
+    if (visible) {
+      const r = visible.getBoundingClientRect();
+      if (r.left < 8 || r.right > window.innerWidth - 8) {
+        visible.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+    }
     setRect(visible ? visible.getBoundingClientRect() : null);
   }, [step, tourOpen]);
 
@@ -151,19 +160,33 @@ export function TourGuide() {
     return () => window.removeEventListener('keydown', onKey);
   }, [tourOpen, close, isLast]);
 
+  // Altura real do cartão (muda com quebra de botões no mobile) — usada para
+  // posicionar sem estourar a viewport em telas pequenas.
+  useLayoutEffect(() => {
+    if (!tourOpen) return;
+    if (cardRef.current) setCardH(cardRef.current.offsetHeight);
+  }, [tourOpen, step, rect]);
+
   // Posição do cartão
   const cardStyle = useMemo(() => {
-    if (!rect) return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' } as const;
-    const vh = window.innerHeight;
     const vw = window.innerWidth;
-    const cardW = Math.min(360, vw - 32);
-    const below = rect.bottom + PAD + 16;
-    const spaceBelow = vh - rect.bottom;
-    const top =
-      spaceBelow > 220 ? below : Math.max(16, rect.top - 16 - 210);
-    const left = Math.min(Math.max(16, rect.left + rect.width / 2 - cardW / 2), vw - cardW - 16);
+    const vh = window.innerHeight;
+    const cardW = Math.min(360, vw - 24);
+    if (!rect) {
+      // Centralização numérica (sem transform: o framer-motion gerencia o
+      // transform da animação e sobrescreveria translate(-50%,-50%)).
+      const top = Math.max(12, (vh - cardH) / 2);
+      return { top, left: (vw - cardW) / 2, width: cardW } as const;
+    }
+    const gap = 14;
+    const below = rect.bottom + gap;
+    const above = rect.top - cardH - gap;
+    // Prefere abaixo do alvo; senão acima; sempre preso à viewport (12px)
+    let top = below + cardH + 12 <= vh ? below : above;
+    top = Math.min(Math.max(12, top), Math.max(12, vh - cardH - 12));
+    const left = Math.min(Math.max(12, rect.left + rect.width / 2 - cardW / 2), vw - cardW - 12);
     return { top, left, width: cardW } as const;
-  }, [rect]);
+  }, [rect, cardH]);
 
   if (!tourOpen) return null;
 
@@ -212,10 +235,11 @@ export function TourGuide() {
         {/* Cartão do passo */}
         <motion.div
           key={step}
+          ref={cardRef}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed rounded-2xl border border-gold/30 bg-card p-5 shadow-2xl shadow-black/50"
+          className="fixed max-h-[calc(100dvh-24px)] overflow-y-auto rounded-2xl border border-gold/30 bg-card p-4 shadow-2xl shadow-black/50 sm:p-5"
           style={{ ...cardStyle, maxWidth: 360 }}
         >
           {/* Cabeçalho */}
@@ -232,7 +256,7 @@ export function TourGuide() {
             </button>
           </div>
 
-          <h3 className="mt-3 font-display text-lg font-bold">{current.title}</h3>
+          <h3 className="mt-3 font-display text-base font-bold sm:text-lg">{current.title}</h3>
           <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{current.text}</p>
 
           {/* Progresso */}
@@ -251,7 +275,8 @@ export function TourGuide() {
             </span>
           </div>
 
-          {/* Ações */}
+          {/* Ações — no passo final os botões ganham grade própria (full-width
+              no mobile) para não se sobreporem em telas estreitas */}
           <div className="mt-4 flex items-center justify-between gap-2">
             <Button variant="ghost" size="sm" onClick={() => close()}>
               Pular tour
@@ -262,7 +287,7 @@ export function TourGuide() {
                   <ChevronLeft className="h-4 w-4" /> Voltar
                 </Button>
               )}
-              {!isLast ? (
+              {!isLast && (
                 <Button
                   size="sm"
                   className="bg-gold text-black hover:bg-gold-light"
@@ -270,26 +295,31 @@ export function TourGuide() {
                 >
                   Próximo <ChevronRight className="ml-1 h-4 w-4" />
                 </Button>
-              ) : (
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-gold/40 text-gold"
-                    onClick={() => {
-                      close();
-                      setView('diario');
-                    }}
-                  >
-                    <PlayCircle className="mr-1 h-4 w-4" /> Registrar primeiro dia
-                  </Button>
-                  <Button size="sm" className="bg-gold text-black hover:bg-gold-light" onClick={() => close()}>
-                    Concluir
-                  </Button>
-                </div>
               )}
             </div>
           </div>
+          {isLast && (
+            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-gold/40 text-gold"
+                onClick={() => {
+                  close();
+                  setView('diario');
+                }}
+              >
+                <PlayCircle className="mr-1 h-4 w-4" /> Registrar primeiro dia
+              </Button>
+              <Button
+                size="sm"
+                className="bg-gold text-black hover:bg-gold-light"
+                onClick={() => close()}
+              >
+                Concluir
+              </Button>
+            </div>
+          )}
         </motion.div>
       </motion.div>
     </AnimatePresence>

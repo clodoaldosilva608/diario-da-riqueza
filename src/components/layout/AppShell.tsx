@@ -8,7 +8,7 @@
  * - Busca global (CommandDialog)
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
@@ -45,8 +45,6 @@ const NAV: Array<{ key: ViewKey; label: string; icon: React.ComponentType<{ clas
   { key: 'config', label: 'Configurações', icon: Settings },
 ];
 
-const MOBILE_NAV = NAV.slice(0, 4);
-
 export function AppShell({ children }: { children: React.ReactNode }) {
   const view = useAppStore((s) => s.view);
   const setView = useAppStore((s) => s.setView);
@@ -58,8 +56,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const setSearchOpen = useAppStore((s) => s.setSearchOpen);
   const folderConnected = useAppStore((s) => s.folderConnected);
   const folderName = useAppStore((s) => s.folderName);
+  const tourOpen = useAppStore((s) => s.tourOpen);
 
   const [query, setQuery] = useState('');
+  const mobileNavRef = useRef<HTMLDivElement>(null);
   const years = useAvailableYears();
   const entries = useLiveQuery(() => db.entries.toArray(), [], []);
   const gam = useGamification(entries);
@@ -103,6 +103,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [vaultAutoSync, setVaultSynced]);
 
   const viewTitle = useMemo(() => NAV.find((n) => n.key === view)?.label ?? '', [view]);
+
+  // Mantém o item ativo visível na nav mobile com scroll horizontal.
+  // Durante o tour, quem rola a nav é o TourGuide (destaca item a item) —
+  // ao fechar, re-centraliza o item ativo da view atual.
+  useEffect(() => {
+    if (tourOpen) return;
+    const t = setTimeout(() => {
+      const el = mobileNavRef.current?.querySelector<HTMLElement>(`[data-tour="nav-${view}"]`);
+      el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }, 80);
+    return () => clearTimeout(t);
+  }, [view, tourOpen]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -241,42 +253,38 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* ============================ BOTTOM NAV MOBILE ============================ */}
+      {/* Linha única com scroll horizontal — 9 seções em ~56px de altura, sem
+          cobrir o conteúdo e com alvos de toque confortáveis (min 56px). */}
       {!focusMode && (
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)] lg:hidden no-print">
-          <div className="grid grid-cols-4">
-            {MOBILE_NAV.map((item) => {
-              const active = view === item.key;
-              return (
-                <button
-                  key={item.key}
-                  onClick={() => setView(item.key)}
-                  className={cn(
-                    'flex min-h-[56px] flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors',
-                    active ? 'text-gold' : 'text-muted-foreground',
-                  )}
-                >
-                  <item.icon className="h-5 w-5" />
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
-          {/* Acesso rápido às demais views (5 colunas p/ acomodar Ajuda) */}
-          <div className="grid grid-cols-5 border-t border-border/50">
-            {NAV.slice(4).map((item) => {
+        <nav
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)] lg:hidden no-print"
+          aria-label="Navegação principal (mobile)"
+        >
+          <div
+            ref={mobileNavRef}
+            className="flex overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {NAV.map((item) => {
               const active = view === item.key;
               return (
                 <button
                   key={item.key}
                   data-tour={`nav-${item.key}`}
                   onClick={() => setView(item.key)}
+                  aria-current={active ? 'page' : undefined}
                   className={cn(
-                    'flex min-h-[44px] flex-col items-center justify-center text-[9px] font-medium transition-colors',
-                    active ? 'text-gold' : 'text-muted-foreground/70',
+                    'relative flex min-h-[56px] min-w-[64px] shrink-0 flex-col items-center justify-center gap-1 px-3 text-[10px] font-medium transition-colors',
+                    active ? 'text-gold' : 'text-muted-foreground',
                   )}
                 >
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
+                  {active && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute inset-x-3 top-0 h-0.5 rounded-full bg-gold"
+                    />
+                  )}
+                  <item.icon className="h-5 w-5" />
+                  <span className="whitespace-nowrap leading-none">{item.label}</span>
                 </button>
               );
             })}
