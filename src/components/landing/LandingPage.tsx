@@ -12,13 +12,14 @@
  */
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 // Animações: apenas no hero (acima da dobra). Seções abaixo são estáticas
 // para garantir visibilidade total em impressão, capturas de tela e bots.
 import {
   ArrowRight, BookOpenCheck, CheckCircle2, CloudOff, ExternalLink, FileDown,
-  Flame, FolderSync, GraduationCap, HardDrive, HeartHandshake, Info,
-  Link2, Mail, NotebookPen, PenLine, ShieldCheck, SlidersHorizontal,
+  FileText, Flame, FolderSync, GraduationCap, HardDrive, HeartHandshake, Info,
+  Link2, Mail, NotebookPen, PenLine, ScrollText, ShieldCheck, SlidersHorizontal,
   Sparkles, Target, TrendingUp, Trophy, Wallet,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -641,6 +642,24 @@ export function LandingPage({ onEnter, enterLabel = 'Começar gratuitamente', on
                   >
                     Privacidade e transparência
                   </button>
+                </li>
+                <li>
+                  <Link
+                    href="/privacidade"
+                    className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-gold"
+                  >
+                    <FileText className="h-4 w-4 text-gold" aria-hidden="true" />
+                    Política de Privacidade
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/termos"
+                    className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-gold"
+                  >
+                    <ScrollText className="h-4 w-4 text-gold" aria-hidden="true" />
+                    Termos de Uso
+                  </Link>
                 </li>
                 <li>
                   <a
