@@ -193,10 +193,10 @@ export function OutreachDialogs() {
             <Button
               onClick={() => closePositive(() => setPixOpen(true))}
               className="h-11 w-full whitespace-normal bg-gold text-base font-semibold text-black hover:bg-gold-light"
-              aria-label="Apoiar com qualquer valor — abre o painel Pix com QR Code e chave para copiar"
+              aria-label="Apoiar o projeto — abre painel com valores fixos no checkout seguro, plano de fundador e Pix com valor livre"
             >
               <HeartHandshake className="h-4 w-4" aria-hidden="true" />
-              Apoiar com qualquer valor
+              Apoiar o projeto
             </Button>
             <Button
               variant="outline"

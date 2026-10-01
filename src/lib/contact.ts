@@ -60,11 +60,12 @@ export const PIX_RECEIVER_NAME = 'Clodoaldo Conceicao Silva';
 /** Nome do projeto exibido no modal de apoio (não é o nome do favorecido no banco) */
 export const PROJECT_NAME = 'Diário da Riqueza';
 
-/** Texto de apresentação do modal de apoio */
+/** Texto de apresentação do modal de apoio (valores fixos + Pix livre) */
 export const PIX_SUPPORT_INTRO =
   'Gostou do Diário da Riqueza? Se quiser apoiar a continuidade do projeto, ' +
-  'você pode contribuir com qualquer valor via Pix. O apoio é opcional e o ' +
-  'acesso à ferramenta continua gratuito.';
+  'escolha um valor fixo no checkout seguro (Pix ou cartão) ou contribua ' +
+  'com qualquer valor via Pix. O apoio é opcional e o acesso à ferramenta ' +
+  'continua gratuito.';
 
 /* ============================== SITE PESSOAL / CRIADORES PARCEIROS ============================== */
 

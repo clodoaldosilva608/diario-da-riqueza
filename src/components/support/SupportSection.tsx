@@ -74,19 +74,19 @@ export function SupportSection() {
                 <HeartHandshake className="h-5 w-5 text-gold" aria-hidden="true" />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="text-sm font-semibold">Apoiar via Pix</h3>
+                <h3 className="text-sm font-semibold">Apoiar o projeto</h3>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Contribua voluntariamente para ajudar na evolução da aplicação.
+                  Valores fixos no checkout seguro, fundador mensal ou Pix com valor livre.
                 </p>
               </div>
               <Button
                 className="h-11 shrink-0 bg-gold text-black hover:bg-gold-light"
                 onClick={() => setPixOpen(true)}
                 aria-haspopup="dialog"
-                aria-label="Apoiar o projeto via Pix — abre painel com a chave Pix para copiar"
+                aria-label="Apoiar o projeto — abre painel com valores fixos (Cakto), plano de fundador e Pix com valor livre"
               >
                 <HeartHandshake className="h-4 w-4" aria-hidden="true" />
-                Apoiar o projeto via Pix
+                Apoiar o projeto
               </Button>
             </div>
             {/* ==================== COMPARTILHAR ==================== */}

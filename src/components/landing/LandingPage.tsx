@@ -26,6 +26,8 @@ import {
   InstagramIcon, LinktreeIcon, TikTokIcon, WhatsAppIcon, YouTubeIcon,
 } from '@/components/support/icons';
 import { PixSupportDialog } from '@/components/support/PixSupportDialog';
+import { SupportOptions } from './SupportOptions';
+import { FounderWall } from './FounderWall';
 import {
   BIO_SITE_URL, CONTACT_EMAIL, CONTACT_EMAIL_URL, CREATOR_SECTION_INTRO,
   INSTAGRAM_HANDLE, INSTAGRAM_URL, LINKTREE_URL, PARTNERS_URL,
@@ -544,6 +546,12 @@ export function LandingPage({ onEnter, enterLabel = 'Começar gratuitamente', on
             </div>
           </div>
         </section>
+
+        {/* ==================== APOIE O PROJETO (CAKTO) ==================== */}
+        <SupportOptions />
+
+        {/* ==================== MURAL DOS FUNDADORES ==================== */}
+        <FounderWall />
 
         {/* ============================ CTA FINAL ============================ */}
         <section aria-labelledby="cta-final-titulo" className="relative overflow-hidden border-t border-border/60">

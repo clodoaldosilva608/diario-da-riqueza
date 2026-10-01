@@ -1,23 +1,22 @@
 'use client';
 
 /**
- * PixSupportDialog — modal de apoio voluntário ao projeto via Pix.
+ * PixSupportDialog — painel central de apoio voluntário ao projeto.
  *
- * - Exibe a chave Pix (telefone) em formato legível e copia a versão normalizada.
+ * - Topo: 3 valores fixos no checkout seguro da Cakto (Pix/cartão) +
+ *   destaque do Apoiador Fundador (assinatura mensal, Mural dos Fundadores).
+ * - Abaixo: Pix direto do criador com VALOR LIVRE — chave (telefone) legível
+ *   e cópia normalizada, QR Code do BR Code oficial do banco.
  * - QR Code Pix: PNG estático importado (asset com hash → cache-first no SW →
- *   funciona offline), gerado a partir do BR Code oficial do banco
- *   (PIX_BR_CODE) e verificado por decodificação em scripts/generate_pix_qr.py.
- * - "Pix copia e cola": botão copia o payload exato do BR Code.
- * - Feedback visual imediato ("Chave Pix copiada" / "Código Pix copiado") + toast.
- * - Instruções simples para pagar no app do banco (QR ou copia e cola).
+ *   funciona offline), verificado em scripts/generate_pix_qr.py.
  * - Segurança: apenas exibição e cópia — nenhum dado bancário é coletado,
- *   nenhuma cobrança automática, nenhum pagamento disparado, nada em analytics,
- *   nenhum serviço externo de geração de QR.
+ *   nenhuma cobrança automática, nada em analytics. Os links da Cakto abrem
+ *   em nova aba com rel="noopener noreferrer" (checkout hospedado oficial).
  */
 
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Check, Copy, HeartHandshake, ShieldCheck } from 'lucide-react';
+import { Check, Copy, Crown, ExternalLink, HeartHandshake, ShieldCheck } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter,
   DialogHeader, DialogTitle,
@@ -28,6 +27,9 @@ import {
   PIX_BR_CODE, PIX_KEY_DISPLAY, PIX_KEY_NORMALIZED, PIX_RECEIVER_NAME,
   PIX_SUPPORT_INTRO, PROJECT_NAME,
 } from '@/lib/contact';
+import {
+  CAKTO_FOUNDER_CHECKOUT_URL, CAKTO_FOUNDER_PRICE, CAKTO_TIERS, tierCheckoutUrl,
+} from '@/lib/cakto';
 import { copyText } from '@/lib/clipboard';
 import pixQrSrc from './pix-qr.png';
 
@@ -88,23 +90,78 @@ export function PixSupportDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="max-w-[calc(100%-2rem)] gap-3 border-gold/25 p-4 sm:max-w-md sm:gap-4 sm:p-6"
+        className="max-h-[85dvh] max-w-[calc(100%-2rem)] gap-3 overflow-y-auto border-gold/25 p-4 sm:max-w-md sm:gap-4 sm:p-6"
         role="dialog"
-        aria-label="Painel de apoio ao projeto via Pix"
+        aria-label="Painel de apoio ao projeto"
       >
         <DialogHeader>
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-gold/40 bg-gold/10">
             <HeartHandshake className="h-7 w-7 text-gold" aria-hidden="true" />
           </div>
           <DialogTitle className="text-center font-display text-xl font-bold">
-            Apoiar o projeto via Pix
+            Apoiar o projeto
           </DialogTitle>
           <DialogDescription className="text-center text-sm leading-relaxed">
             {PIX_SUPPORT_INTRO}
           </DialogDescription>
         </DialogHeader>
 
-        {/* QR Code — BR Code oficial do banco (PNG estático, offline).
+        {/* ============ VALORES FIXOS — CHECKOUT SEGURO CAKTO ============ */}
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Valores fixos — checkout seguro (Pix ou cartão)
+          </p>
+          {CAKTO_TIERS.map((tier) => (
+            <Button
+              key={tier.id}
+              asChild
+              className="h-12 w-full justify-between whitespace-normal bg-gold text-base font-semibold text-black hover:bg-gold-light"
+            >
+              <a
+                href={tierCheckoutUrl(tier)}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${tier.label} no checkout seguro da Cakto — abre em nova aba`}
+                title={`Abre em nova aba: ${tierCheckoutUrl(tier)}`}
+              >
+                <span className="flex items-center gap-2">
+                  <HeartHandshake className="h-4 w-4" aria-hidden="true" />
+                  {tier.label}
+                </span>
+                <ExternalLink className="h-4 w-4 opacity-70" aria-hidden="true" />
+              </a>
+            </Button>
+          ))}
+          <Button
+            asChild
+            variant="outline"
+            className="h-12 w-full justify-between whitespace-normal border-gold/50 text-sm font-semibold text-gold hover:bg-gold/10"
+          >
+            <a
+              href={CAKTO_FOUNDER_CHECKOUT_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Virar Apoiador Fundador por R$ ${CAKTO_FOUNDER_PRICE.toFixed(2).replace('.', ',')} por mês — nome no Mural dos Fundadores; abre em nova aba`}
+              title="Nome no Mural dos Fundadores enquanto a assinatura estiver ativa"
+            >
+              <span className="flex items-center gap-2">
+                <Crown className="h-4 w-4" aria-hidden="true" />
+                Fundador — {`R$ ${CAKTO_FOUNDER_PRICE.toFixed(2).replace('.', ',')}/mês`}
+              </span>
+              <ExternalLink className="h-4 w-4 opacity-70" aria-hidden="true" />
+            </a>
+          </Button>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Separator className="flex-1 bg-border/60" />
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            ou valor livre via Pix
+          </span>
+          <Separator className="flex-1 bg-border/60" />
+        </div>
+
+        {/* QR Code — BR Code oficial do banco (PNG estático, offline) — VALOR LIVRE.
             Fluído: o branco escala com a tela (max 240px) e o QR preenche
             100% da largura disponível — nunca estoura em telas pequenas. */}
         <div className="space-y-3">
@@ -116,7 +173,7 @@ export function PixSupportDialog({
                 width={196}
                 height={196}
                 className="block h-auto w-full"
-                loading="eager"
+                loading="lazy"
                 decoding="async"
               />
             </div>
