@@ -10,7 +10,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  BarChart3, CreditCard, Crown, Package, Settings, Users, Wallet, Webhook,
+  BarChart3, CreditCard, Crown, Megaphone, Package, Settings, Users, Wallet, Webhook,
 } from 'lucide-react';
 
 const NAV = [
@@ -21,6 +21,7 @@ const NAV = [
   { href: '/admin/clientes', label: 'Clientes', icon: Users },
   { href: '/admin/produtos', label: 'Produtos', icon: Package },
   { href: '/admin/webhooks', label: 'Webhooks', icon: Webhook },
+  { href: '/admin/divulgacao', label: 'Divulgação', icon: Megaphone },
   { href: '/admin/configuracoes', label: 'Configurações', icon: Settings },
 ] as const;
 
