@@ -1,0 +1,832 @@
+     1→'use client';
+     2→
+     3→/**
+     4→ * LandingPage — apresentação pública do Diário da Riqueza.
+     5→ *
+     6→ * Exibida na rota "/" para visitantes novos (antes do onboarding) e
+     7→ * reaberta por Configurações → "Ver apresentação do projeto".
+     8→ *
+     9→ * Comunicação: organização, clareza, disciplina e acompanhamento de metas.
+    10→ * Sem promessas de enriquecimento, ganhos garantidos ou resultados financeiros.
+    11→ * Sem depoimentos, números de usuários ou parceiros inventados.
+    12→ */
+    13→
+    14→import { useState } from 'react';
+    15→import Link from 'next/link';
+    16→import { motion } from 'framer-motion';
+    17→// Animações: apenas no hero (acima da dobra). Seções abaixo são estáticas
+    18→// para garantir visibilidade total em impressão, capturas de tela e bots.
+    19→import {
+    20→  ArrowRight, BookOpenCheck, CheckCircle2, CloudOff, ExternalLink, FileDown,
+    21→  FileText, Flame, FolderSync, GraduationCap, HardDrive, HeartHandshake, Info,
+    22→  Link2, Mail, NotebookPen, PenLine, ScrollText, ShieldCheck, SlidersHorizontal,
+    23→  Sparkles, Target, TrendingUp, Trophy, Wallet,
+    24→} from 'lucide-react';
+    25→import { Button } from '@/components/ui/button';
+    26→import {
+    27→  InstagramIcon, LinktreeIcon, TikTokIcon, WhatsAppIcon, YouTubeIcon,
+    28→} from '@/components/support/icons';
+    29→import { PixSupportDialog } from '@/components/support/PixSupportDialog';
+    30→import { SupportOptions } from './SupportOptions';
+    31→import { FounderWall } from './FounderWall';
+    32→import { FounderTicker } from './FounderTicker';
+    33→import {
+    34→  BIO_SITE_URL, CONTACT_EMAIL, CONTACT_EMAIL_URL, CREATOR_SECTION_INTRO,
+    35→  INSTAGRAM_HANDLE, INSTAGRAM_URL, LINKTREE_URL, PARTNERS_URL,
+    36→  PERSONAL_SITE_URL, TIKTOK_HANDLE, TIKTOK_URL, WHATSAPP_URL, YOUTUBE_HANDLE,
+    37→  YOUTUBE_URL,
+    38→} from '@/lib/contact';
+    39→import { cn } from '@/lib/utils';
+    40→
+    41→type LandingProps = {
+    42→  /** CTA principal — inicia o fluxo de entrada (ou volta ao app p/ usuários onboardados) */
+    43→  onEnter: () => void;
+    44→  /** Rótulo do CTA principal */
+    45→  enterLabel?: string;
+    46→  /** Se definido, mostra "Voltar ao app" no cabeçalho (usuário já onboardado) */
+    47→  onExit?: () => void;
+    48→};
+    49→
+    50→const STEPS = [
+    51→  {
+    52→    icon: Target,
+    53→    title: 'Defina suas metas',
+    54→    desc: 'Escolha onde quer chegar: metas pessoais e financeiras com valor e prazo claros.',
+    55→  },
+    56→  {
+    57→    icon: Wallet,
+    58→    title: 'Organize seu orçamento',
+    59→    desc: 'Registre receitas e despesas e enxergue para onde o seu dinheiro está indo.',
+    60→  },
+    61→  {
+    62→    icon: NotebookPen,
+    63→    title: 'Registre estudos e práticas',
+    64→    desc: 'Anote o que aprendeu no dia e o que colocou em prática, todos os dias.',
+    65→  },
+    66→  {
+    67→    icon: TrendingUp,
+    68→    title: 'Acompanhe sua evolução',
+    69→    desc: 'Estatísticas, calendário de consistência e progresso das metas em um só lugar.',
+    70→  },
+    71→  {
+    72→    icon: Flame,
+    73→    title: 'Mantenha a consistência',
+    74→    desc: 'Streaks, XP e lembretes ajudam você a manter o ritmo ao longo do tempo.',
+    75→  },
+    76→] as const;
+    77→
+    78→const FEATURES = [
+    79→  {
+    80→    icon: Target,
+    81→    title: 'Metas pessoais e financeiras',
+    82→    desc: 'Sonhos, metas por categoria e progresso acompanhado de perto.',
+    83→  },
+    84→  {
+    85→    icon: Wallet,
+    86→    title: 'Receitas e despesas',
+    87→    desc: 'Lançamentos únicos ou recorrentes, com gráficos e projeção até a meta.',
+    88→  },
+    89→  {
+    90→    icon: GraduationCap,
+    91→    title: 'Estudos e aprendizados',
+    92→    desc: 'Biblioteca de temas com progresso e registro do que você aprendeu.',
+    93→  },
+    94→  {
+    95→    icon: NotebookPen,
+    96→    title: 'Práticas e hábitos diários',
+    97→    desc: 'Diário diário com prática obrigatória, humor, energia e ações produtivas.',
+    98→  },
+    99→  {
+   100→    icon: PenLine,
+   101→    title: 'Reflexões pessoais',
+   102→    desc: 'Espaço para pensamentos, ideias e lições de cada dia.',
+   103→  },
+   104→  {
+   105→    icon: Trophy,
+   106→    title: 'XP, níveis e conquistas',
+   107→    desc: 'Gamificação para transformar disciplina em hábito — com streaks e recordes.',
+   108→  },
+   109→  {
+   110→    icon: CloudOff,
+   111→    title: 'Funciona offline',
+   112→    desc: 'Sem depender de internet: registre no ônibus, no metrô ou no campo.',
+   113→  },
+   114→  {
+   115→    icon: ShieldCheck,
+   116→    title: 'Dados no seu dispositivo',
+   117→    desc: 'Tudo fica no seu aparelho (IndexedDB). Nenhum servidor guarda suas informações.',
+   118→  },
+   119→  {
+   120→    icon: FileDown,
+   121→    title: 'Backup e exportação',
+   122→    desc: 'PDF, Word, Excel, Markdown, JSON e backups locais quando quiser.',
+   123→  },
+   124→  {
+   125→    icon: FolderSync,
+   126→    title: 'Integração com Obsidian',
+   127→    desc: 'Espelhe seu diário em um vault de Markdown e edite de onde preferir.',
+   128→  },
+   129→] as const;
+   130→
+   131→const AUDIENCES = [
+   132→  'Pessoas que querem organizar melhor seus objetivos.',
+   133→  'Pessoas que desejam acompanhar sua vida financeira com clareza.',
+   134→  'Estudantes e empreendedores que registram o que aprendem.',
+   135→  'Pessoas que buscam desenvolver disciplina e constância.',
+   136→  'Qualquer pessoa que queira registrar sua evolução pessoal.',
+   137→] as const;
+   138→
+   139→const PRIVACY = [
+   140→  {
+   141→    icon: CloudOff,
+   142→    title: 'Funcionamento offline',
+   143→    desc: 'A ferramenta foi feita para funcionar sem internet, direto no navegador.',
+   144→  },
+   145→  {
+   146→    icon: HardDrive,
+   147→    title: 'Dados mantidos no dispositivo',
+   148→    desc: 'Seus registros ficam armazenados no seu aparelho, não em servidores nossos.',
+   149→  },
+   150→  {
+   151→    icon: ShieldCheck,
+   152→    title: 'Sem promessas financeiras',
+   153→    desc: 'Nenhuma promessa de ganho ou retorno — apenas organização e acompanhamento.',
+   154→  },
+   155→  {
+   156→    icon: SlidersHorizontal,
+   157→    title: 'Você no controle',
+   158→    desc: 'Edite, apague ou recomece quando quiser: suas informações pertencem a você.',
+   159→  },
+   160→  {
+   161→    icon: FileDown,
+   162→    title: 'Exportação e backup',
+   163→    desc: 'Leve seus dados para onde quiser, com exportações e backups a qualquer momento.',
+   164→  },
+   165→] as const;
+   166→
+   167→export function LandingPage({ onEnter, enterLabel = 'Começar gratuitamente', onExit }: LandingProps) {
+   168→  const [pixOpen, setPixOpen] = useState(false);
+   169→  const year = new Date().getFullYear();
+   170→
+   171→  function scrollTo(id: string) {
+   172→    document.getElementById(id)?.scrollIntoView({ block: 'start' });
+   173→  }
+   174→
+   175→  return (
+   176→    <div className="flex min-h-screen flex-col bg-background">
+   177→      <a
+   178→        href="#conteudo"
+   179→        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-gold focus:px-4 focus:py-2 focus:text-black"
+   180→      >
+   181→        Pular para o conteúdo
+   182→      </a>
+   183→
+   184→      {/* ============================ CABEÇALHO ============================ */}
+   185→      <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-md">
+   186→        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+   187→          <button
+   188→            type="button"
+   189→            onClick={() => window.scrollTo({ top: 0 })}
+   190→            className="flex items-center gap-2.5 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
+   191→            aria-label="Diário da Riqueza — voltar ao topo"
+   192→          >
+   193→            <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-gold/40 bg-gold/10">
+   194→              <BookOpenCheck className="h-4.5 w-4.5 text-gold" aria-hidden="true" />
+   195→            </span>
+   196→            <span className="hidden whitespace-nowrap font-display text-sm font-bold gold-gradient-text sm:inline sm:text-lg">
+   197→              Diário da Riqueza
+   198→            </span>
+   199→          </button>
+   200→          <nav aria-label="Navegação da página" className="flex items-center gap-1.5 sm:gap-2">
+   201→            {onExit && (
+   202→              <Button variant="ghost" onClick={onExit} className="hidden h-10 sm:inline-flex">
+   203→                Voltar ao app
+   204→              </Button>
+   205→            )}
+   206→            <Button
+   207→              variant="ghost"
+   208→              onClick={() => scrollTo('como-funciona')}
+   209→              className="hidden h-10 sm:inline-flex"
+   210→            >
+   211→              Como funciona
+   212→            </Button>
+   213→            <Button
+   214→              onClick={onEnter}
+   215→              className="h-10 whitespace-nowrap bg-gold px-3.5 text-black hover:bg-gold-light sm:px-6"
+   216→            >
+   217→              {enterLabel}
+   218→            </Button>
+   219→          </nav>
+   220→        </div>
+   221→      </header>
+   222→
+   223→      <main id="conteudo" className="flex-1">
+   224→        {/* ============================ HERO ============================ */}
+   225→        <section className="relative overflow-hidden" aria-labelledby="hero-titulo">
+   226→          <div
+   227→            aria-hidden="true"
+   228→            className="pointer-events-none absolute inset-0"
+   229→            style={{
+   230→              background:
+   231→                'radial-gradient(60% 50% at 50% 0%, rgba(212,175,55,0.10) 0%, transparent 70%)',
+   232→            }}
+   233→          />
+   234→          <div className="relative mx-auto w-full max-w-4xl px-4 py-16 text-center sm:px-6 sm:py-24">
+   235→            <motion.span
+   236→              initial={{ opacity: 0, y: 8 }}
+   237→              animate={{ opacity: 1, y: 0 }}
+   238→              className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/5 px-4 py-1.5 text-xs font-medium text-gold"
+   239→            >
+   240→              <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+   241→              Gratuito • 100% offline • Seus dados no seu dispositivo
+   242→            </motion.span>
+   243→
+   244→            <motion.h1
+   245→              id="hero-titulo"
+   246→              initial={{ opacity: 0, y: 10 }}
+   247→              animate={{ opacity: 1, y: 0 }}
+   248→              transition={{ delay: 0.05 }}
+   249→              className="mt-6 font-display text-4xl font-black leading-tight sm:text-6xl"
+   250→            >
+   251→              Transforme seus objetivos em{' '}
+   252→              <span className="gold-gradient-text">uma prática diária</span>
+   253→            </motion.h1>
+   254→
+   255→            <motion.p
+   256→              initial={{ opacity: 0, y: 10 }}
+   257→              animate={{ opacity: 1, y: 0 }}
+   258→              transition={{ delay: 0.1 }}
+   259→              className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg"
+   260→            >
+   261→              O Diário da Riqueza ajuda você a organizar metas, orçamento, estudos e
+   262→              hábitos para acompanhar sua evolução com mais clareza e consistência.
+   263→            </motion.p>
+   264→
+   265→            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+   266→              <Button
+   267→                onClick={onEnter}
+   268→                className="h-12 w-full px-8 text-base font-semibold bg-gold text-black hover:bg-gold-light sm:w-auto"
+   269→              >
+   270→                {enterLabel}
+   271→                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+   272→              </Button>
+   273→              <Button
+   274→                variant="outline"
+   275→                onClick={() => scrollTo('como-funciona')}
+   276→                className="h-12 w-full border-gold/40 px-8 text-base sm:w-auto"
+   277→              >
+   278→                Conhecer a ferramenta
+   279→              </Button>
+   280→            </div>
+   281→
+   282→            <ul
+   283→              className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground"
+   284→              aria-label="Destaques da ferramenta"
+   285→            >
+   286→              <li className="flex items-center gap-1.5">
+   287→                <CloudOff className="h-3.5 w-3.5 text-gold" aria-hidden="true" /> Funciona offline
+   288→              </li>
+   289→              <li className="flex items-center gap-1.5">
+   290→                <ShieldCheck className="h-3.5 w-3.5 text-gold" aria-hidden="true" /> Dados só no seu dispositivo
+   291→              </li>
+   292→              <li className="flex items-center gap-1.5">
+   293→                <Sparkles className="h-3.5 w-3.5 text-gold" aria-hidden="true" /> Comece gratuitamente
+   294→              </li>
+   295→            </ul>
+   296→          </div>
+   297→        </section>
+   298→
+   299→        {/* ====================== TICKER DOS FUNDADORES (redline) ====================== */}
+   300→        <FounderTicker />
+   301→
+   302→        {/* ============================ COMO FUNCIONA ============================ */}
+   303→        <section id="como-funciona" aria-labelledby="como-funciona-titulo" className="scroll-mt-20 border-t border-border/60">
+   304→          <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+   305→            <div className="mx-auto max-w-2xl text-center">
+   306→              <h2 id="como-funciona-titulo" className="font-display text-3xl font-bold sm:text-4xl">
+   307→                Como <span className="gold-gradient-text">funciona</span>
+   308→              </h2>
+   309→              <p className="mt-3 text-muted-foreground">
+   310→                Um ritual simples de alguns minutos por dia — cinco passos que
+   311→                transformam intenções em progresso visível.
+   312→              </p>
+   313→            </div>
+   314→
+   315→            <ol className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+   316→              {STEPS.map((step, i) => (
+   317→                <li
+   318→                  key={step.title}
+   319→                                    className="relative rounded-2xl border border-border p-5 transition-colors hover:border-gold/40"
+   320→                >
+   321→                  <span
+   322→                    className="absolute -top-3 left-5 flex h-7 w-7 items-center justify-center rounded-full bg-gold text-sm font-bold text-black"
+   323→                    aria-hidden="true"
+   324→                  >
+   325→                    {i + 1}
+   326→                  </span>
+   327→                  <step.icon className="mt-2 h-6 w-6 text-gold" aria-hidden="true" />
+   328→                  <h3 className="mt-3 text-sm font-semibold">{step.title}</h3>
+   329→                  <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+   330→                    {step.desc}
+   331→                  </p>
+   332→                </li>
+   333→              ))}
+   334→            </ol>
+   335→          </div>
+   336→        </section>
+   337→
+   338→        {/* ============================ FUNCIONALIDADES ============================ */}
+   339→        <section id="funcionalidades" aria-labelledby="funcionalidades-titulo" className="scroll-mt-20 border-t border-border/60 bg-muted/30">
+   340→          <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+   341→            <div className="mx-auto max-w-2xl text-center">
+   342→              <h2 id="funcionalidades-titulo" className="font-display text-3xl font-bold sm:text-4xl">
+   343→                Tudo que você precisa,{' '}
+   344→                <span className="gold-gradient-text">nada que atrapalhe</span>
+   345→              </h2>
+   346→              <p className="mt-3 text-muted-foreground">
+   347→                Cada recurso existe para um propósito: registrar, organizar e
+   348→                acompanhar a sua evolução.
+   349→              </p>
+   350→            </div>
+   351→
+   352→            <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+   353→              {FEATURES.map((f, i) => (
+   354→                <li
+   355→                  key={f.title}
+   356→                                    className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-gold/40"
+   357→                >
+   358→                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-gold/30 bg-gold/10">
+   359→                    <f.icon className="h-5 w-5 text-gold" aria-hidden="true" />
+   360→                  </div>
+   361→                  <h3 className="mt-3.5 text-sm font-semibold">{f.title}</h3>
+   362→                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+   363→                    {f.desc}
+   364→                  </p>
+   365→                </li>
+   366→              ))}
+   367→            </ul>
+   368→          </div>
+   369→        </section>
+   370→
+   371→        {/* ============================ PARA QUEM É ============================ */}
+   372→        <section id="para-quem" aria-labelledby="para-quem-titulo" className="scroll-mt-20 border-t border-border/60">
+   373→          <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+   374→            <div className="grid items-center gap-10 lg:grid-cols-2">
+   375→              <div>
+   376→                <h2 id="para-quem-titulo" className="font-display text-3xl font-bold sm:text-4xl">
+   377→                  Para <span className="gold-gradient-text">quem é</span>
+   378→                </h2>
+   379→                <p className="mt-4 leading-relaxed text-muted-foreground">
+   380→                  O Diário da Riqueza foi feito para quem acredita que evolução
+   381→                  nasce de pequenas ações registradas todos os dias. Se você quer
+   382→                  mais clareza sobre seus objetivos, seu dinheiro e seus hábitos,
+   383→                  esta ferramenta foi pensada para você.
+   384→                </p>
+   385→                <p className="mt-3 leading-relaxed text-muted-foreground">
+   386→                  Não importa o ponto de partida: o que importa é a direção — e
+   387→                  registrar o caminho é a melhor forma de mantê-la.
+   388→                </p>
+   389→              </div>
+   390→
+   391→              <ul className="space-y-3">
+   392→                {AUDIENCES.map((a) => (
+   393→                  <li
+   394→                    key={a}
+   395→                    className="flex items-start gap-3 rounded-2xl border border-border p-4 transition-colors hover:border-gold/40"
+   396→                  >
+   397→                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-gold" aria-hidden="true" />
+   398→                    <span className="text-sm leading-relaxed">{a}</span>
+   399→                  </li>
+   400→                ))}
+   401→              </ul>
+   402→            </div>
+   403→          </div>
+   404→        </section>
+   405→
+   406→        {/* ============================ TRANSPARÊNCIA ============================ */}
+   407→        <section id="transparencia" aria-labelledby="transparencia-titulo" className="scroll-mt-20 border-t border-border/60 bg-muted/30">
+   408→          <div className="mx-auto w-full max-w-3xl px-4 py-16 text-center sm:px-6 sm:py-20">
+   409→            <div>
+   410→              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-gold/40 bg-gold/10">
+   411→                <Info className="h-6 w-6 text-gold" aria-hidden="true" />
+   412→              </div>
+   413→              <h2 id="transparencia-titulo" className="mt-5 font-display text-3xl font-bold sm:text-4xl">
+   414→                O que a ferramenta <span className="gold-gradient-text">não promete</span>
+   415→              </h2>
+   416→              <blockquote className="mt-6 rounded-2xl border border-gold/25 bg-gold/5 p-6 text-left leading-relaxed sm:p-8">
+   417→                <p className="text-base sm:text-lg">
+   418→                  O Diário da Riqueza não promete enriquecimento automático nem
+   419→                  substitui educação financeira, trabalho, planejamento ou
+   420→                  orientação profissional. Ele é uma ferramenta para ajudar você a
+   421→                  organizar informações, acompanhar hábitos e agir com mais clareza.
+   422→                </p>
+   423→              </blockquote>
+   424→              <p className="mt-5 text-sm text-muted-foreground">
+   425→                Sem promessas de ganhos, sem fórmulas mágicas — apenas organização,
+   426→                disciplina e o registro honesto do seu caminho.
+   427→              </p>
+   428→            </div>
+   429→          </div>
+   430→        </section>
+   431→
+   432→        {/* ============================ PRIVACIDADE ============================ */}
+   433→        <section id="privacidade" aria-labelledby="privacidade-titulo" className="scroll-mt-20 border-t border-border/60">
+   434→          <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+   435→            <div className="mx-auto max-w-2xl text-center">
+   436→              <h2 id="privacidade-titulo" className="font-display text-3xl font-bold sm:text-4xl">
+   437→                Privacidade <span className="gold-gradient-text">em primeiro lugar</span>
+   438→              </h2>
+   439→              <p className="mt-3 text-muted-foreground">
+   440→                Feita para funcionar offline, com seus dados sob o seu controle.
+   441→              </p>
+   442→            </div>
+   443→
+   444→            <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+   445→              {PRIVACY.map((p, i) => (
+   446→                <li
+   447→                  key={p.title}
+   448→                                    className="rounded-2xl border border-border p-5"
+   449→                >
+   450→                  <p.icon className="h-6 w-6 text-gold" aria-hidden="true" />
+   451→                  <h3 className="mt-3 text-sm font-semibold">{p.title}</h3>
+   452→                  <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+   453→                    {p.desc}
+   454→                  </p>
+   455→                </li>
+   456→              ))}
+   457→            </ul>
+   458→          </div>
+   459→        </section>
+   460→
+   461→        {/* ============================ CRIADOR ============================ */}
+   462→        <section id="criador" aria-labelledby="criador-titulo" className="scroll-mt-20 border-t border-border/60 bg-muted/30">
+   463→          <div className="mx-auto w-full max-w-4xl px-4 py-16 sm:px-6 sm:py-20">
+   464→            <div className="rounded-3xl border border-gold/25 bg-card p-6 sm:p-10">
+   465→              <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+   466→                {/* Avatar com iniciais */}
+   467→                <div className="flex shrink-0 flex-col items-center gap-3">
+   468→                  <span
+   469→                    className="flex h-16 w-16 items-center justify-center rounded-2xl border border-gold/40 bg-gold/10 font-display text-xl font-black text-gold"
+   470→                    aria-hidden="true"
+   471→                  >
+   472→                    CS
+   473→                  </span>
+   474→                  {/* Atalhos rápidos para as redes do criador */}
+   475→                  <div className="flex items-center gap-2" role="group" aria-label="Redes sociais do criador">
+   476→                    <a
+   477→                      href={INSTAGRAM_URL}
+   478→                      target="_blank"
+   479→                      rel="noopener noreferrer"
+   480→                      className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-[#E4405F]/50 hover:text-[#E4405F]"
+   481→                      aria-label={`Instagram do criador (${INSTAGRAM_HANDLE}) — abre em nova aba`}
+   482→                      title={`Instagram ${INSTAGRAM_HANDLE}`}
+   483→                    >
+   484→                      <InstagramIcon className="h-4 w-4" />
+   485→                    </a>
+   486→                    <a
+   487→                      href={TIKTOK_URL}
+   488→                      target="_blank"
+   489→                      rel="noopener noreferrer"
+   490→                      className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-foreground/50 hover:text-foreground"
+   491→                      aria-label={`TikTok do criador (${TIKTOK_HANDLE}) — abre em nova aba`}
+   492→                      title={`TikTok ${TIKTOK_HANDLE}`}
+   493→                    >
+   494→                      <TikTokIcon className="h-4 w-4" />
+   495→                    </a>
+   496→                    <a
+   497→                      href={YOUTUBE_URL}
+   498→                      target="_blank"
+   499→                      rel="noopener noreferrer"
+   500→                      className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-[#FF0000]/50 hover:text-[#FF0000]"
+   501→                      aria-label={`YouTube do criador (${YOUTUBE_HANDLE}) — abre em nova aba`}
+   502→                      title={`YouTube ${YOUTUBE_HANDLE}`}
+   503→                    >
+   504→                      <YouTubeIcon className="h-4 w-4" />
+   505→                    </a>
+   506→                  </div>
+   507→                </div>
+   508→
+   509→                <div className="min-w-0 flex-1">
+   510→                  <h2 id="criador-titulo" className="font-display text-2xl font-bold sm:text-3xl">
+   511→                    Conheça o <span className="gold-gradient-text">criador</span> do projeto
+   512→                  </h2>
+   513→                  <p className="mt-4 leading-relaxed text-muted-foreground">
+   514→                    {CREATOR_SECTION_INTRO}
+   515→                  </p>
+   516→                  <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+   517→                    <Button
+   518→                      asChild
+   519→                      className="h-11 bg-gold text-black hover:bg-gold-light"
+   520→                    >
+   521→                      <a
+   522→                        href={PERSONAL_SITE_URL}
+   523→                        target="_blank"
+   524→                        rel="noopener noreferrer"
+   525→                        aria-label="Visitar o site pessoal do criador clodoaldo.vercel.app — abre em nova aba"
+   526→                        title="Abre em nova aba: https://clodoaldo.vercel.app/"
+   527→                      >
+   528→                        <ExternalLink className="h-4 w-4" aria-hidden="true" />
+   529→                        Visitar meu site
+   530→                      </a>
+   531→                    </Button>
+   532→                    <Button
+   533→                      asChild
+   534→                      variant="outline"
+   535→                      className="h-11 border-gold/40 text-gold hover:bg-gold/10"
+   536→                    >
+   537→                      <a
+   538→                        href={PARTNERS_URL}
+   539→                        target="_blank"
+   540→                        rel="noopener noreferrer"
+   541→                        aria-label="Conhecer e apoiar outros apps — página Criadores Parceiros, abre em nova aba"
+   542→                        title="Abre em nova aba: https://clodoaldo.vercel.app/criadores-parceiros"
+   543→                      >
+   544→                        <HeartHandshake className="h-4 w-4" aria-hidden="true" />
+   545→                        Conhecer e apoiar outros apps
+   546→                      </a>
+   547→                    </Button>
+   548→                  </div>
+   549→                </div>
+   550→              </div>
+   551→            </div>
+   552→          </div>
+   553→        </section>
+   554→
+   555→        {/* ==================== APOIE O PROJETO (CAKTO) ==================== */}
+   556→        <SupportOptions />
+   557→
+   558→        {/* ==================== MURAL DOS FUNDADORES ==================== */}
+   559→        <FounderWall />
+   560→
+   561→        {/* ============================ CTA FINAL ============================ */}
+   562→        <section aria-labelledby="cta-final-titulo" className="relative overflow-hidden border-t border-border/60">
+   563→          <div
+   564→            aria-hidden="true"
+   565→            className="pointer-events-none absolute inset-0"
+   566→            style={{
+   567→              background:
+   568→                'radial-gradient(50% 60% at 50% 100%, rgba(212,175,55,0.10) 0%, transparent 70%)',
+   569→            }}
+   570→          />
+   571→          <div className="relative mx-auto w-full max-w-3xl px-4 py-20 text-center sm:px-6 sm:py-24">
+   572→            <div>
+   573→              <h2 id="cta-final-titulo" className="font-display text-3xl font-black leading-tight sm:text-5xl">
+   574→                Comece hoje a registrar o{' '}
+   575→                <span className="gold-gradient-text">caminho que você está construindo</span>
+   576→              </h2>
+   577→              <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
+   578→                Crie seu diário em poucos passos, explore com dados de exemplo e
+   579→                mantenha o hábito — tudo no seu dispositivo, gratuitamente.
+   580→              </p>
+   581→              <Button
+   582→                onClick={onEnter}
+   583→                className="mt-8 h-12 max-w-full px-5 text-sm font-semibold bg-gold text-black hover:bg-gold-light sm:px-8 sm:text-base"
+   584→              >
+   585→                Usar o Diário da Riqueza gratuitamente
+   586→                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+   587→              </Button>
+   588→            </div>
+   589→          </div>
+   590→        </section>
+   591→      </main>
+   592→
+   593→      {/* ============================ RODAPÉ ============================ */}
+   594→      <footer className="mt-auto border-t border-border/70 bg-sidebar">
+   595→        <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
+   596→          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+   597→            {/* Marca */}
+   598→            <div>
+   599→              <div className="flex items-center gap-2.5">
+   600→                <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-gold/40 bg-gold/10">
+   601→                  <BookOpenCheck className="h-4.5 w-4.5 text-gold" aria-hidden="true" />
+   602→                </span>
+   603→                <span className="font-display text-lg font-bold gold-gradient-text">
+   604→                  Diário da Riqueza
+   605→                </span>
+   606→              </div>
+   607→              <p className="mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground">
+   608→                Organize metas, orçamento, estudos e hábitos com clareza,
+   609→                disciplina e consistência — direto no seu dispositivo.
+   610→              </p>
+   611→            </div>
+   612→
+   613→            {/* Explorar */}
+   614→            <nav aria-label="Links do rodapé">
+   615→              <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+   616→                Explorar
+   617→              </h3>
+   618→              <ul className="mt-4 space-y-2.5 text-sm">
+   619→                <li>
+   620→                  <button
+   621→                    type="button"
+   622→                    onClick={onEnter}
+   623→                    className="text-muted-foreground transition-colors hover:text-gold"
+   624→                  >
+   625→                    Começar gratuitamente
+   626→                  </button>
+   627→                </li>
+   628→                <li>
+   629→                  <button
+   630→                    type="button"
+   631→                    onClick={() => scrollTo('como-funciona')}
+   632→                    className="text-muted-foreground transition-colors hover:text-gold"
+   633→                  >
+   634→                    Como funciona
+   635→                  </button>
+   636→                </li>
+   637→                <li>
+   638→                  <button
+   639→                    type="button"
+   640→                    onClick={() => scrollTo('transparencia')}
+   641→                    className="text-muted-foreground transition-colors hover:text-gold"
+   642→                  >
+   643→                    Privacidade e transparência
+   644→                  </button>
+   645→                </li>
+   646→                <li>
+   647→                  <Link
+   648→                    href="/privacidade"
+   649→                    className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-gold"
+   650→                  >
+   651→                    <FileText className="h-4 w-4 text-gold" aria-hidden="true" />
+   652→                    Política de Privacidade
+   653→                  </Link>
+   654→                </li>
+   655→                <li>
+   656→                  <Link
+   657→                    href="/termos"
+   658→                    className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-gold"
+   659→                  >
+   660→                    <ScrollText className="h-4 w-4 text-gold" aria-hidden="true" />
+   661→                    Termos de Uso
+   662→                  </Link>
+   663→                </li>
+   664→                <li>
+   665→                  <a
+   666→                    href="/admin"
+   667→                    className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-gold"
+   668→                    aria-label="Abrir o painel de administração do projeto — acesso restrito ao operador"
+   669→                    title="Painel de administração — acesso restrito ao operador"
+   670→                  >
+   671→                    <ShieldCheck className="h-4 w-4 text-gold" aria-hidden="true" />
+   672→                    Administração
+   673→                  </a>
+   674→                </li>
+   675→              </ul>
+   676→            </nav>
+   677→
+   678→            {/* Contato e apoio */}
+   679→            <div>
+   680→              <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+   681→                Contato &amp; apoio
+   682→              </h3>
+   683→              <ul className="mt-4 space-y-2.5 text-sm">
+   684→                <li>
+   685→                  <a
+   686→                    href={WHATSAPP_URL}
+   687→                    target="_blank"
+   688→                    rel="noopener noreferrer"
+   689→                    className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-[#25D366]"
+   690→                    aria-label="Falar com o criador pelo WhatsApp — abre em nova aba ou no aplicativo"
+   691→                    title="Abre uma conversa no WhatsApp com o criador do projeto"
+   692→                  >
+   693→                    <WhatsAppIcon className="h-4 w-4 text-[#25D366]" aria-hidden="true" />
+   694→                    WhatsApp — fale comigo
+   695→                  </a>
+   696→                </li>
+   697→                <li>
+   698→                  <button
+   699→                    type="button"
+   700→                    onClick={() => setPixOpen(true)}
+   701→                    className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-gold"
+   702→                    aria-label="Apoiar o projeto via Pix — abre painel com a chave Pix para copiar"
+   703→                  >
+   704→                    <HeartHandshake className="h-4 w-4 text-gold" aria-hidden="true" />
+   705→                    Apoiar o projeto via Pix
+   706→                  </button>
+   707→                </li>
+   708→                <li>
+   709→                  <a
+   710→                    href={PERSONAL_SITE_URL}
+   711→                    target="_blank"
+   712→                    rel="noopener noreferrer"
+   713→                    className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-gold"
+   714→                    aria-label="Visitar o site pessoal do criador — abre em nova aba"
+   715→                    title="Abre em nova aba: https://clodoaldo.vercel.app/"
+   716→                  >
+   717→                    <ExternalLink className="h-4 w-4 text-gold" aria-hidden="true" />
+   718→                    Site pessoal do criador
+   719→                  </a>
+   720→                </li>
+   721→              </ul>
+   722→            </div>
+   723→
+   724→            {/* Redes sociais — as mesmas do rodapé do site pessoal do criador */}
+   725→            <div>
+   726→              <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+   727→                Redes sociais
+   728→              </h3>
+   729→              <ul className="mt-4 space-y-2.5 text-sm">
+   730→                <li>
+   731→                  <a
+   732→                    href={INSTAGRAM_URL}
+   733→                    target="_blank"
+   734→                    rel="noopener noreferrer"
+   735→                    className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-[#E4405F]"
+   736→                    aria-label={`Seguir no Instagram (${INSTAGRAM_HANDLE}) — abre em nova aba`}
+   737→                    title={`Instagram ${INSTAGRAM_HANDLE}`}
+   738→                  >
+   739→                    <InstagramIcon className="h-4 w-4 text-[#E4405F]" aria-hidden="true" />
+   740→                    Instagram
+   741→                  </a>
+   742→                </li>
+   743→                <li>
+   744→                  <a
+   745→                    href={TIKTOK_URL}
+   746→                    target="_blank"
+   747→                    rel="noopener noreferrer"
+   748→                    className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
+   749→                    aria-label={`Seguir no TikTok (${TIKTOK_HANDLE}) — abre em nova aba`}
+   750→                    title={`TikTok ${TIKTOK_HANDLE}`}
+   751→                  >
+   752→                    <TikTokIcon className="h-4 w-4 text-foreground" aria-hidden="true" />
+   753→                    TikTok
+   754→                  </a>
+   755→                </li>
+   756→                <li>
+   757→                  <a
+   758→                    href={YOUTUBE_URL}
+   759→                    target="_blank"
+   760→                    rel="noopener noreferrer"
+   761→                    className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-[#FF0000]"
+   762→                    aria-label={`Inscrever-se no canal do YouTube (${YOUTUBE_HANDLE}) — abre em nova aba`}
+   763→                    title={`YouTube ${YOUTUBE_HANDLE}`}
+   764→                  >
+   765→                    <YouTubeIcon className="h-4 w-4 text-[#FF0000]" aria-hidden="true" />
+   766→                    YouTube
+   767→                  </a>
+   768→                </li>
+   769→                <li>
+   770→                  <a
+   771→                    href={CONTACT_EMAIL_URL}
+   772→                    className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-gold"
+   773→                    aria-label={`Enviar e-mail para ${CONTACT_EMAIL}`}
+   774→                    title={CONTACT_EMAIL_URL}
+   775→                  >
+   776→                    <Mail className="h-4 w-4 text-gold" aria-hidden="true" />
+   777→                    E-mail
+   778→                  </a>
+   779→                </li>
+   780→                <li>
+   781→                  <a
+   782→                    href={BIO_SITE_URL}
+   783→                    target="_blank"
+   784→                    rel="noopener noreferrer"
+   785→                    className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-gold"
+   786→                    aria-label="Abrir a página bio.site do criador — abre em nova aba"
+   787→                    title="Abre em nova aba: https://bio.site/clodoadosilva"
+   788→                  >
+   789→                    <Link2 className="h-4 w-4 text-gold" aria-hidden="true" />
+   790→                    Bio.site
+   791→                  </a>
+   792→                </li>
+   793→                <li>
+   794→                  <a
+   795→                    href={LINKTREE_URL}
+   796→                    target="_blank"
+   797→                    rel="noopener noreferrer"
+   798→                    className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-[#43E55C]"
+   799→                    aria-label="Abrir a Linktree do criador — abre em nova aba"
+   800→                    title="Abre em nova aba: https://linktr.ee/clodoaldo608"
+   801→                  >
+   802→                    <LinktreeIcon className="h-4 w-4 text-[#43E55C]" aria-hidden="true" />
+   803→                    Linktree
+   804→                  </a>
+   805→                </li>
+   806→              </ul>
+   807→            </div>
+   808→          </div>
+   809→
+   810→          <div className="gold-divider mt-10" />
+   811→
+   812→          <div className="mt-6 space-y-2 text-xs leading-relaxed text-muted-foreground">
+   813→            <p>
+   814→              © {year} Diário da Riqueza. Ferramenta de organização pessoal — não
+   815→              oferece garantia de retorno financeiro, não promete enriquecimento e
+   816→              não substitui orientação profissional.
+   817→            </p>
+   818→            <p>
+   819→              Seus dados ficam armazenados apenas no seu dispositivo. Contribuições
+   820→              via Pix são opcionais e não desbloqueiam recursos.
+   821→            </p>
+   822→          </div>
+   823→        </div>
+   824→      </footer>
+   825→
+   826→      {/* Modal de apoio via Pix (compartilhado com o rodapé) */}
+   827→      <PixSupportDialog open={pixOpen} onOpenChange={setPixOpen} />
+   828→    </div>
+   829→  );
+   830→}
+   831→
+   832→

@@ -560,3 +560,20 @@ Work Log:
 Stage Summary:
 - Entregue: seção Divulgação no painel admin com as 20 artes + 20 legendas prontas, download individual (PNG) ou em lote (ZIP com tudo, .md de legendas gerado no cliente)
 - Aprendizados: build OOM no ambiente -> usar NODE_OPTIONS="--max-old-space-size=3072"; agent-browser AGENT_BROWSER_SESSION não persiste entre chamadas do Bash -> encadear todo o fluxo em um único comando; screenshot flag é --full
+
+---
+Task ID: 20
+Agent: Super Z (main agent)
+Task: Landing — Mural dos Fundadores recolhido por padrão com botão para ver todos os nomes
+
+Work Log:
+- src/components/landing/FounderWall.tsx: estado expanded (default false) + PREVIEW_COUNT=8; grade renderiza rest.slice(0,8) quando recolhida
+- Botão toggle (variant outline, tema dourado) abaixo da grade: "Ver todos os N nomes" <-> "Mostrar menos", com ChevronDown/Up, aria-expanded e aria-controls="mural-grade-fundadores"; só aparece se rest.length > 8
+- Card Fundador Ouro permanece em evidência mesmo recolhido; contagem "76 fundadores sustentando o projeto" intacta
+- Qualidade: tsc limpo em src/ (erros pré-existentes só em skills/), eslint ok, build OK (NODE_OPTIONS max-old-space-size=3072), 346/346 checks (58+30+46+66+91+55)
+- Commit 673d07f push main -> Vercel; token de API indisponível neste ambiente -> validação de deploy direto na produção (chunk de5a105e contém "Mostrar menos" e "mural-grade-fundadores")
+- E2E agent-browser na produção: recolhido = 8 nomes, clique expande = 75 nomes, clique de novo = 8 nomes; screenshots em download/landing_mural_recolhido.png e landing_mural_expandido2.png
+
+Stage Summary:
+- Mural dos Fundadores agora abre recolhido (8 nomes + Ouro) com botão dourado "Ver todos os 75 nomes" que expande/recolhe a lista completa
+- Aprendizado: sem token Vercel no ambiente, validar deploy conferindo strings exclusivas do commit nos chunks de produção + E2E agent-browser encadeado em um único comando
