@@ -26,14 +26,14 @@ export function SectionHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 mb-5">
-      <div className="flex items-center gap-3">
+    <div className="mb-5 flex flex-wrap items-start justify-between gap-3 sm:gap-4">
+      <div className="flex min-w-0 items-center gap-3">
         {Icon && (
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-gold/30 bg-gold/10">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gold/30 bg-gold/10">
             <Icon className="h-5 w-5 text-gold" />
           </div>
         )}
-        <div>
+        <div className="min-w-0">
           <h2 className="font-display text-2xl font-bold tracking-tight">{title}</h2>
           {subtitle && <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>}
         </div>
@@ -65,16 +65,16 @@ export function StatCard({
     red: 'text-loss',
   }[tone];
   return (
-    <Card className="premium-card border-border/80">
+    <Card className="min-w-0 premium-card border-border/80">
       <CardContent className="p-4 sm:p-5">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          <p className="min-w-0 truncate text-xs font-medium uppercase tracking-wider text-muted-foreground">
             {label}
           </p>
-          <Icon className={cn('h-4 w-4', toneClass)} />
+          <Icon className={cn('h-4 w-4 shrink-0', toneClass)} />
         </div>
-        <p className={cn('mt-2 text-2xl font-bold tabular-nums', toneClass)}>{value}</p>
-        {sub && <p className="mt-1 text-xs text-muted-foreground">{sub}</p>}
+        <p className={cn('mt-2 truncate text-xl font-bold tabular-nums sm:text-2xl', toneClass)}>{value}</p>
+        {sub && <p className="mt-1 truncate text-xs text-muted-foreground">{sub}</p>}
       </CardContent>
     </Card>
   );

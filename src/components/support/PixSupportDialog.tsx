@@ -113,7 +113,7 @@ export function PixSupportDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="max-w-md border-gold/25"
+        className="max-w-[calc(100%-2rem)] gap-3 border-gold/25 p-4 sm:max-w-md sm:gap-4 sm:p-6"
         role="dialog"
         aria-label="Painel de apoio ao projeto via Pix"
       >
@@ -132,13 +132,13 @@ export function PixSupportDialog({
         {/* QR Code — BR Code oficial do banco (PNG estático, offline) */}
         <div className="space-y-3">
           <div className="rounded-2xl border border-border bg-muted/40 p-4">
-            <div className="mx-auto w-fit rounded-xl bg-white p-3 shadow-sm">
+            <div className="mx-auto w-fit max-w-full rounded-xl bg-white p-3 shadow-sm">
               <img
                 src={pixQrSrc.src}
                 alt={`QR Code Pix do projeto ${PROJECT_NAME} — escaneie com o app do seu banco para apoiar`}
                 width={196}
                 height={196}
-                className="block h-[196px] w-[196px]"
+                className="block h-auto w-full max-w-[196px]"
                 loading="eager"
                 decoding="async"
               />
@@ -166,7 +166,7 @@ export function PixSupportDialog({
           <Button
             onClick={handleCopyKey}
             className={`
-              h-11 w-full text-base font-semibold
+              h-11 w-full whitespace-normal text-base font-semibold
               ${copied === 'key'
                 ? 'bg-emerald-wealth text-white hover:bg-emerald-wealth'
                 : 'bg-gold text-black hover:bg-gold-light'}
@@ -190,7 +190,7 @@ export function PixSupportDialog({
             variant="outline"
             onClick={handleCopyCode}
             className={`
-              h-11 w-full text-sm font-semibold
+              h-11 w-full whitespace-normal px-3 text-sm font-semibold
               ${copied === 'code'
                 ? 'border-emerald-wealth bg-emerald-wealth/10 text-emerald-wealth hover:bg-emerald-wealth/10'
                 : ''}

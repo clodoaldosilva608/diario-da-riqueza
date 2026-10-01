@@ -205,15 +205,15 @@ export function SettingsView() {
           <div className="flex flex-wrap items-center gap-2">
             {store.folderConnected ? (
               <>
-                <Badge className="gap-1 bg-emerald-wealth/15 text-emerald-wealth">
-                  <FolderCheck className="h-3.5 w-3.5" /> Conectada: {store.folderName}
+                <Badge className="whitespace-normal gap-1 bg-emerald-wealth/15 text-emerald-wealth">
+                  <FolderCheck className="h-3.5 w-3.5 shrink-0" /> Conectada: {store.folderName}
                 </Badge>
                 <span className="text-xs text-muted-foreground">
                   Subpastas: {SUBFOLDERS.join(' / ')}
                 </span>
               </>
             ) : (
-              <Badge variant="outline" className="text-muted-foreground">
+              <Badge variant="outline" className="whitespace-normal text-muted-foreground">
                 Pasta não conectada — downloads automáticos
               </Badge>
             )}

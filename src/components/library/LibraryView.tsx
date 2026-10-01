@@ -175,14 +175,14 @@ function StudyCard({ study }: { study: Study }) {
   return (
     <Card className={cn('transition-colors', study.status === 'concluido' ? 'border-emerald-wealth/35' : 'hover:border-gold/35')}>
       <CardContent className="space-y-3 p-4">
-        <div className="flex items-start justify-between gap-2">
+        <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">{study.topic}</p>
             {study.description && (
               <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{study.description}</p>
             )}
           </div>
-          <div className="flex shrink-0 items-center gap-1.5">
+          <div className="flex max-w-full flex-wrap items-center gap-1.5">
             <Badge variant="secondary" className="text-[10px]">
               {STUDY_AREA_LABELS[study.area]}
             </Badge>

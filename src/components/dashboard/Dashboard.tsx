@@ -232,7 +232,7 @@ export function Dashboard({ onOpenEntry }: { onOpenEntry: (date: string) => void
       </div>
 
       {/* Stats rápidos */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 min-[400px]:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Dias registrados"
           value={String(entries.length)}

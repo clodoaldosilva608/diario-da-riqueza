@@ -182,7 +182,7 @@ export function LandingPage({ onEnter, enterLabel = 'Começar gratuitamente', on
             <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-gold/40 bg-gold/10">
               <BookOpenCheck className="h-4.5 w-4.5 text-gold" aria-hidden="true" />
             </span>
-            <span className="font-display text-sm font-bold whitespace-nowrap gold-gradient-text sm:text-lg">
+            <span className="hidden whitespace-nowrap font-display text-sm font-bold gold-gradient-text sm:inline sm:text-lg">
               Diário da Riqueza
             </span>
           </button>
