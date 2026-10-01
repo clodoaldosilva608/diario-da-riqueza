@@ -16,15 +16,22 @@ import { motion } from 'framer-motion';
 // Animações: apenas no hero (acima da dobra). Seções abaixo são estáticas
 // para garantir visibilidade total em impressão, capturas de tela e bots.
 import {
-  ArrowRight, BookOpenCheck, CheckCircle2, CloudOff, FileDown, Flame,
-  FolderSync, GraduationCap, HardDrive, HeartHandshake, Info, NotebookPen,
-  PenLine, ShieldCheck, SlidersHorizontal, Sparkles, Target, TrendingUp,
-  Trophy, Wallet,
+  ArrowRight, BookOpenCheck, CheckCircle2, CloudOff, ExternalLink, FileDown,
+  Flame, FolderSync, GraduationCap, HardDrive, HeartHandshake, Info,
+  Link2, Mail, NotebookPen, PenLine, ShieldCheck, SlidersHorizontal,
+  Sparkles, Target, TrendingUp, Trophy, Wallet,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { WhatsAppIcon } from '@/components/support/icons';
+import {
+  InstagramIcon, LinktreeIcon, TikTokIcon, WhatsAppIcon, YouTubeIcon,
+} from '@/components/support/icons';
 import { PixSupportDialog } from '@/components/support/PixSupportDialog';
-import { WHATSAPP_URL } from '@/lib/contact';
+import {
+  BIO_SITE_URL, CONTACT_EMAIL, CONTACT_EMAIL_URL, CREATOR_SECTION_INTRO,
+  INSTAGRAM_HANDLE, INSTAGRAM_URL, LINKTREE_URL, PARTNERS_URL,
+  PERSONAL_SITE_URL, TIKTOK_HANDLE, TIKTOK_URL, WHATSAPP_URL, YOUTUBE_HANDLE,
+  YOUTUBE_URL,
+} from '@/lib/contact';
 import { cn } from '@/lib/utils';
 
 type LandingProps = {
@@ -444,6 +451,100 @@ export function LandingPage({ onEnter, enterLabel = 'Começar gratuitamente', on
           </div>
         </section>
 
+        {/* ============================ CRIADOR ============================ */}
+        <section id="criador" aria-labelledby="criador-titulo" className="scroll-mt-20 border-t border-border/60 bg-muted/30">
+          <div className="mx-auto w-full max-w-4xl px-4 py-16 sm:px-6 sm:py-20">
+            <div className="rounded-3xl border border-gold/25 bg-card p-6 sm:p-10">
+              <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+                {/* Avatar com iniciais */}
+                <div className="flex shrink-0 flex-col items-center gap-3">
+                  <span
+                    className="flex h-16 w-16 items-center justify-center rounded-2xl border border-gold/40 bg-gold/10 font-display text-xl font-black text-gold"
+                    aria-hidden="true"
+                  >
+                    CS
+                  </span>
+                  {/* Atalhos rápidos para as redes do criador */}
+                  <div className="flex items-center gap-2" role="group" aria-label="Redes sociais do criador">
+                    <a
+                      href={INSTAGRAM_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-[#E4405F]/50 hover:text-[#E4405F]"
+                      aria-label={`Instagram do criador (${INSTAGRAM_HANDLE}) — abre em nova aba`}
+                      title={`Instagram ${INSTAGRAM_HANDLE}`}
+                    >
+                      <InstagramIcon className="h-4 w-4" />
+                    </a>
+                    <a
+                      href={TIKTOK_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-foreground/50 hover:text-foreground"
+                      aria-label={`TikTok do criador (${TIKTOK_HANDLE}) — abre em nova aba`}
+                      title={`TikTok ${TIKTOK_HANDLE}`}
+                    >
+                      <TikTokIcon className="h-4 w-4" />
+                    </a>
+                    <a
+                      href={YOUTUBE_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-[#FF0000]/50 hover:text-[#FF0000]"
+                      aria-label={`YouTube do criador (${YOUTUBE_HANDLE}) — abre em nova aba`}
+                      title={`YouTube ${YOUTUBE_HANDLE}`}
+                    >
+                      <YouTubeIcon className="h-4 w-4" />
+                    </a>
+                  </div>
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <h2 id="criador-titulo" className="font-display text-2xl font-bold sm:text-3xl">
+                    Conheça o <span className="gold-gradient-text">criador</span> do projeto
+                  </h2>
+                  <p className="mt-4 leading-relaxed text-muted-foreground">
+                    {CREATOR_SECTION_INTRO}
+                  </p>
+                  <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                    <Button
+                      asChild
+                      className="h-11 bg-gold text-black hover:bg-gold-light"
+                    >
+                      <a
+                        href={PERSONAL_SITE_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Visitar o site pessoal do criador clodoaldo.vercel.app — abre em nova aba"
+                        title="Abre em nova aba: https://clodoaldo.vercel.app/"
+                      >
+                        <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                        Visitar meu site
+                      </a>
+                    </Button>
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="h-11 border-gold/40 text-gold hover:bg-gold/10"
+                    >
+                      <a
+                        href={PARTNERS_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Conhecer e apoiar outros apps — página Criadores Parceiros, abre em nova aba"
+                        title="Abre em nova aba: https://clodoaldo.vercel.app/criadores-parceiros"
+                      >
+                        <HeartHandshake className="h-4 w-4" aria-hidden="true" />
+                        Conhecer e apoiar outros apps
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ============================ CTA FINAL ============================ */}
         <section aria-labelledby="cta-final-titulo" className="relative overflow-hidden border-t border-border/60">
           <div
@@ -479,7 +580,7 @@ export function LandingPage({ onEnter, enterLabel = 'Começar gratuitamente', on
       {/* ============================ RODAPÉ ============================ */}
       <footer className="mt-auto border-t border-border/70 bg-sidebar">
         <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
-          <div className="grid gap-10 sm:grid-cols-3">
+          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
             {/* Marca */}
             <div>
               <div className="flex items-center gap-2.5">
@@ -561,6 +662,104 @@ export function LandingPage({ onEnter, enterLabel = 'Começar gratuitamente', on
                     <HeartHandshake className="h-4 w-4 text-gold" aria-hidden="true" />
                     Apoiar o projeto via Pix
                   </button>
+                </li>
+                <li>
+                  <a
+                    href={PERSONAL_SITE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-gold"
+                    aria-label="Visitar o site pessoal do criador — abre em nova aba"
+                    title="Abre em nova aba: https://clodoaldo.vercel.app/"
+                  >
+                    <ExternalLink className="h-4 w-4 text-gold" aria-hidden="true" />
+                    Site pessoal do criador
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Redes sociais — as mesmas do rodapé do site pessoal do criador */}
+            <div>
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+                Redes sociais
+              </h3>
+              <ul className="mt-4 space-y-2.5 text-sm">
+                <li>
+                  <a
+                    href={INSTAGRAM_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-[#E4405F]"
+                    aria-label={`Seguir no Instagram (${INSTAGRAM_HANDLE}) — abre em nova aba`}
+                    title={`Instagram ${INSTAGRAM_HANDLE}`}
+                  >
+                    <InstagramIcon className="h-4 w-4 text-[#E4405F]" aria-hidden="true" />
+                    Instagram
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href={TIKTOK_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
+                    aria-label={`Seguir no TikTok (${TIKTOK_HANDLE}) — abre em nova aba`}
+                    title={`TikTok ${TIKTOK_HANDLE}`}
+                  >
+                    <TikTokIcon className="h-4 w-4 text-foreground" aria-hidden="true" />
+                    TikTok
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href={YOUTUBE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-[#FF0000]"
+                    aria-label={`Inscrever-se no canal do YouTube (${YOUTUBE_HANDLE}) — abre em nova aba`}
+                    title={`YouTube ${YOUTUBE_HANDLE}`}
+                  >
+                    <YouTubeIcon className="h-4 w-4 text-[#FF0000]" aria-hidden="true" />
+                    YouTube
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href={CONTACT_EMAIL_URL}
+                    className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-gold"
+                    aria-label={`Enviar e-mail para ${CONTACT_EMAIL}`}
+                    title={CONTACT_EMAIL_URL}
+                  >
+                    <Mail className="h-4 w-4 text-gold" aria-hidden="true" />
+                    E-mail
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href={BIO_SITE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-gold"
+                    aria-label="Abrir a página bio.site do criador — abre em nova aba"
+                    title="Abre em nova aba: https://bio.site/clodoadosilva"
+                  >
+                    <Link2 className="h-4 w-4 text-gold" aria-hidden="true" />
+                    Bio.site
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href={LINKTREE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-[#43E55C]"
+                    aria-label="Abrir a Linktree do criador — abre em nova aba"
+                    title="Abre em nova aba: https://linktr.ee/clodoaldo608"
+                  >
+                    <LinktreeIcon className="h-4 w-4 text-[#43E55C]" aria-hidden="true" />
+                    Linktree
+                  </a>
                 </li>
               </ul>
             </div>

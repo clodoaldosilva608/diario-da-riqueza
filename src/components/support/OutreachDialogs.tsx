@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * OutreachDialogs — ciclo de pop-ups de engajamento do projeto (4 modais).
+ * OutreachDialogs — ciclo de pop-ups de engajamento do projeto (5 modais).
  *
  * 1) support — Apoio: pedido discreto de contribuição de qualquer valor;
  *    "Apoiar com qualquer valor" abre o PixSupportDialog (QR + chave Pix).
@@ -10,10 +10,12 @@
  * 3) site — Meu site / criadores parceiros: clodoaldo.vercel.app.
  * 4) method — Sobre o método e como ajudar: as duas perguntas/respostas
  *    ("O método garante riqueza?" e "Como posso ajudar?") + compartilhar.
+ * 5) follow — Siga o projeto: botões diretos para seguir no TikTok e no
+ *    Instagram (perfis do criador, os mesmos do rodapé do site pessoal).
  *
  * Rotação (ver src/lib/outreach.ts):
  * - 40s após abrir o app, mostra o PRIMEIRO pop-up vencido na ordem
- *   support → share → site → method (cadência de 7 dias por pop-up).
+ *   support → share → site → method → follow (cadência de 7 dias por pop-up).
  * - Ao fechar um pop-up SEM ação positiva, o próximo vencido entra em 20s
  *   (cadeia), limitado a OUTREACH_MAX_PER_SESSION por sessão.
  * - Ação positiva (apoiar / compartilhar / visitar site) nunca dispara cadeia.
@@ -25,7 +27,9 @@
  */
 
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { ExternalLink, Globe, HeartHandshake, Share2, ShieldCheck } from 'lucide-react';
+import {
+  ExternalLink, Globe, HeartHandshake, Share2, ShieldCheck, Users,
+} from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter,
   DialogHeader, DialogTitle,
@@ -33,25 +37,28 @@ import {
 import { Button } from '@/components/ui/button';
 import { PixSupportDialog } from './PixSupportDialog';
 import { ShareDialog } from './ShareDialog';
+import { InstagramIcon, TikTokIcon } from './icons';
 import { useAppStore } from '@/stores/useAppStore';
 import {
   OUTREACH_CHAIN_DELAY_MS, OUTREACH_FIRST_DELAY_MS, OUTREACH_MAX_PER_SESSION,
   nextPopupDue, type OutreachGate, type OutreachKind,
 } from '@/lib/outreach';
 import {
-  METHOD_FAQ, PARTNERS_URL, PERSONAL_SITE_URL, SITE_PROMO_INTRO,
-  SUPPORT_NUDGE_INTRO,
+  FOLLOW_INTRO, INSTAGRAM_HANDLE, INSTAGRAM_URL, METHOD_FAQ, PARTNERS_URL,
+  PERSONAL_SITE_URL, SITE_PROMO_INTRO, SUPPORT_NUDGE_INTRO, TIKTOK_HANDLE,
+  TIKTOK_URL,
 } from '@/lib/contact';
 
 type StoreState = ReturnType<typeof useAppStore.getState>;
 
-/** Timestamps persistidos dos 4 pop-ups, na forma que o outreach.ts espera */
+/** Timestamps persistidos dos 5 pop-ups, na forma que o outreach.ts espera */
 function lastByKind(s: StoreState): Record<OutreachKind, number | null> {
   return {
     support: s.supportNudgeLastAt,
     share: s.shareNudgeLastAt,
     site: s.sitePromoLastAt,
     method: s.methodNudgeLastAt,
+    follow: s.followNudgeLastAt,
   };
 }
 
@@ -95,6 +102,7 @@ export function OutreachDialogs() {
     if (kind === 'support') s.setSupportNudgeShown(at);
     else if (kind === 'share') s.setShareNudgeShown(at);
     else if (kind === 'site') s.setSitePromoShown(at);
+    else if (kind === 'follow') s.setFollowNudgeShown(at);
     else s.setMethodNudgeShown(at);
   }
 
@@ -387,6 +395,71 @@ export function OutreachDialogs() {
               aria-label="Fechar este aviso (ele pode reaparecer em alguns dias)"
             >
               Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ========= POP-UP: SIGA O PROJETO (TikTok + Instagram) ========= */}
+      <Dialog open={openKind === 'follow'} onOpenChange={handleDialogOpenChange}>
+        <DialogContent
+          className="max-w-[calc(100%-2rem)] gap-3 border-gold/25 p-4 sm:max-w-sm sm:gap-4 sm:p-6"
+          role="dialog"
+          aria-label="Convite para seguir o projeto no TikTok e no Instagram"
+        >
+          <DialogHeader>
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-gold/40 bg-gold/10">
+              <Users className="h-7 w-7 text-gold" aria-hidden="true" />
+            </div>
+            <DialogTitle className="text-center font-display text-xl font-bold">
+              Siga o projeto nas redes
+            </DialogTitle>
+            <DialogDescription className="text-center text-sm leading-relaxed">
+              {FOLLOW_INTRO}
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="flex-col gap-2 sm:flex-col sm:justify-center">
+            <Button
+              asChild
+              className="h-11 w-full whitespace-normal bg-[#E4405F] text-base font-semibold text-white hover:bg-[#c9354f]"
+            >
+              <a
+                href={INSTAGRAM_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => closePositive()}
+                aria-label={`Seguir no Instagram (${INSTAGRAM_HANDLE}) — abre em nova aba`}
+                title={`Abre em nova aba: ${INSTAGRAM_URL}`}
+              >
+                <InstagramIcon className="h-4 w-4" aria-hidden="true" />
+                Seguir no Instagram
+              </a>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="h-11 w-full whitespace-normal border-foreground/25 text-sm font-semibold hover:bg-foreground/10"
+            >
+              <a
+                href={TIKTOK_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => closePositive()}
+                aria-label={`Seguir no TikTok (${TIKTOK_HANDLE}) — abre em nova aba`}
+                title={`Abre em nova aba: ${TIKTOK_URL}`}
+              >
+                <TikTokIcon className="h-4 w-4" aria-hidden="true" />
+                Seguir no TikTok
+              </a>
+            </Button>
+            <Button
+              variant="ghost"
+              className="h-10 w-full text-sm text-muted-foreground"
+              onClick={closeNeutral}
+              aria-label="Agora não — fechar este aviso (ele pode reaparecer em alguns dias)"
+            >
+              Agora não
             </Button>
           </DialogFooter>
         </DialogContent>

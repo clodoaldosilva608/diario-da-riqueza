@@ -3,22 +3,27 @@
 /**
  * SupportSection — "Ajude a construir o projeto" (no Dashboard).
  *
- * Dois cards discretos:
+ * Cards discretos:
  * 1) WhatsApp — abre conversa direta com o criador (wa.me, mensagem pré-preenchida).
  * 2) Pix — modal de apoio voluntário com cópia da chave.
+ * 3) Compartilhar — modal com menu nativo + redes sociais.
+ * 4) Siga o projeto — Instagram, TikTok e YouTube do criador (nova aba).
  *
- * Não bloqueia a navegação principal: o WhatsApp abre em nova aba/app e
- * o Pix abre um modal local. Nenhum dado do usuário é enviado a servidores.
+ * Não bloqueia a navegação principal: links externos abrem em nova aba e
+ * os modais são locais. Nenhum dado do usuário é enviado a servidores.
  */
 
 import { useState } from 'react';
-import { HeartHandshake, Share2 } from 'lucide-react';
+import { HeartHandshake, Share2, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { WhatsAppIcon } from './icons';
+import { InstagramIcon, TikTokIcon, WhatsAppIcon, YouTubeIcon } from './icons';
 import { PixSupportDialog } from './PixSupportDialog';
 import { ShareDialog } from './ShareDialog';
-import { WHATSAPP_URL } from '@/lib/contact';
+import {
+  INSTAGRAM_HANDLE, INSTAGRAM_URL, TIKTOK_HANDLE, TIKTOK_URL,
+  WHATSAPP_URL, YOUTUBE_HANDLE, YOUTUBE_URL,
+} from '@/lib/contact';
 
 export function SupportSection() {
   const [pixOpen, setPixOpen] = useState(false);
@@ -105,6 +110,68 @@ export function SupportSection() {
                 <Share2 className="h-4 w-4" aria-hidden="true" />
                 Compartilhar
               </Button>
+            </div>
+            {/* ==================== SIGA O PROJETO ==================== */}
+            <div className="flex flex-col gap-3 rounded-2xl border border-border p-4 sm:flex-row sm:items-center md:col-span-2">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-gold/40 bg-gold/10">
+                <Users className="h-5 w-5 text-gold" aria-hidden="true" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-semibold">Siga o projeto nas redes</h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Bastidores do desenvolvimento, dicas de uso e novidades — seguir é gratuito.
+                </p>
+              </div>
+              <div className="flex shrink-0 flex-wrap gap-2">
+                <Button
+                  asChild
+                  variant="outline"
+                  className="h-11 border-[#E4405F]/40 text-[#E4405F] hover:bg-[#E4405F]/10"
+                >
+                  <a
+                    href={INSTAGRAM_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Seguir no Instagram (${INSTAGRAM_HANDLE}) — abre em nova aba`}
+                    title={`Instagram ${INSTAGRAM_HANDLE}`}
+                  >
+                    <InstagramIcon className="h-4 w-4" aria-hidden="true" />
+                    Instagram
+                  </a>
+                </Button>
+                <Button
+                  asChild
+                  variant="outline"
+                  className="h-11 border-foreground/25 hover:bg-foreground/10"
+                >
+                  <a
+                    href={TIKTOK_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Seguir no TikTok (${TIKTOK_HANDLE}) — abre em nova aba`}
+                    title={`TikTok ${TIKTOK_HANDLE}`}
+                  >
+                    <TikTokIcon className="h-4 w-4" aria-hidden="true" />
+                    TikTok
+                  </a>
+                </Button>
+                <Button
+                  asChild
+                  variant="outline"
+                  className="h-11 border-[#FF0000]/40 text-[#FF0000] hover:bg-[#FF0000]/10"
+                >
+                  <a
+                    href={YOUTUBE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Inscrever-se no canal do YouTube (${YOUTUBE_HANDLE}) — abre em nova aba`}
+                    title={`YouTube ${YOUTUBE_HANDLE}`}
+                  >
+                    <YouTubeIcon className="h-4 w-4" aria-hidden="true" />
+                    YouTube
+                  </a>
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>

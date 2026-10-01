@@ -92,6 +92,53 @@ export const SUPPORT_NUDGE_INTRO =
   'de R$ 1 ao que você puder. É o apoio voluntário que mantém o projeto no ' +
   'ar e permite que ele continue 100% gratuito para todos.';
 
+/* ============================== REDES SOCIAIS DO CRIADOR ============================== */
+
+/**
+ * Redes sociais — as mesmas do rodapé do site pessoal
+ * (clodoaldo.vercel.app), mantidas aqui para o rodapé da landing page,
+ * na seção do criador e no pop-up "siga nas redes".
+ * Links sempre abertos em nova aba com rel="noopener noreferrer".
+ */
+export const INSTAGRAM_URL = 'https://www.instagram.com/clodoaldo_c_silva';
+
+/** @ no Instagram */
+export const INSTAGRAM_HANDLE = '@clodoaldo_c_silva';
+
+export const TIKTOK_URL = 'https://www.tiktok.com/@clodoald_c_silva';
+
+/** @ no TikTok */
+export const TIKTOK_HANDLE = '@clodoald_c_silva';
+
+export const YOUTUBE_URL = 'https://youtube.com/@clodoaldosilvaa';
+
+/** @ no YouTube */
+export const YOUTUBE_HANDLE = '@clodoaldosilvaa';
+
+/** E-mail público de contato (o mesmo exibido no rodapé do site pessoal) */
+export const CONTACT_EMAIL = 'clodoaldosilva608@gmail.com';
+
+export const CONTACT_EMAIL_URL = `mailto:${CONTACT_EMAIL}`;
+
+/** Página "bio" alternativa (link da árvore no rodapé do site pessoal) */
+export const BIO_SITE_URL = 'https://bio.site/clodoadosilva';
+
+export const LINKTREE_URL = 'https://linktr.ee/clodoaldo608';
+
+/** Texto da seção "Conheça o criador" na landing page */
+export const CREATOR_SECTION_INTRO =
+  'O Diário da Riqueza é desenvolvido por Clodoaldo Silva — criador, ' +
+  'desenvolvedor e estrategista digital que transforma ideias em produtos ' +
+  'reais desde 2016. Conheça meu site para ver todos os projetos, serviços ' +
+  'e conteúdos, e conheça também os outros apps independentes e gratuitos ' +
+  'que estou desenvolvendo.';
+
+/** Texto do pop-up "siga nas redes" (TikTok e Instagram) */
+export const FOLLOW_INTRO =
+  'Acompanhe os bastidores do desenvolvimento, dicas de uso do Diário da ' +
+  'Riqueza e novidades sobre os próximos recursos. Seguir no TikTok e no ' +
+  'Instagram é uma forma simples e gratuita de apoiar o projeto.';
+
 /* ============================== COMPARTILHAR ============================== */
 
 /** Link canônico da aplicação (o middleware redireciona o domínio antigo) */

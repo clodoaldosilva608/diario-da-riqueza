@@ -1,6 +1,6 @@
 /**
  * Diário da Riqueza — Outreach: cadência e rotação dos pop-ups de
- * apoio / compartilhar / site / método.
+ * apoio / compartilhar / site / método / seguir nas redes.
  *
  * Puro e determinístico (sem DOM/store) para ser testável em bun
  * (scripts/test_outreach.ts). O componente OutreachDialogs consome estas
@@ -9,8 +9,8 @@
  * Regras de UX (o "porquê" de cada limite):
  * - NUNCA interromper overlays de onboarding: tour guiado, landing aberta ou
  *   busca global — o pop-up só aparece com o app "em repouso".
- * - ROTAÇÃO: há 4 pop-ups (apoio → compartilhar → site → método). A cada
- *   oportunidade mostra-se apenas o PRIMEIRO vencido na ordem de prioridade;
+ * - ROTAÇÃO: há 5 pop-ups (apoio → compartilhar → site → método → seguir).
+ *   A cada oportunidade mostra-se apenas o PRIMEIRO vencido na ordem de prioridade;
  *   os demais esperam a próxima sessão. Assim o usuário conhece todas as
  *   mensagens ao longo dos dias sem bombardeio.
  * - No máximo OUTREACH_MAX_PER_SESSION pop-ups por sessão (o 2º entra pela
@@ -33,11 +33,13 @@ export const OUTREACH_CHAIN_DELAY_MS = 20_000;
 /** Máximo de pop-ups outreach por sessão (1º pelo timer, 2º pela cadeia) */
 export const OUTREACH_MAX_PER_SESSION = 2;
 
-/** Os quatro pop-ups do ciclo de engajamento */
-export type OutreachKind = 'support' | 'share' | 'site' | 'method';
+/** Os cinco pop-ups do ciclo de engajamento */
+export type OutreachKind = 'support' | 'share' | 'site' | 'method' | 'follow';
 
 /** Ordem de prioridade quando mais de um está vencido */
-export const OUTREACH_ORDER: OutreachKind[] = ['support', 'share', 'site', 'method'];
+export const OUTREACH_ORDER: OutreachKind[] = [
+  'support', 'share', 'site', 'method', 'follow',
+];
 
 /** Condições que precisam estar verdadeiras para qualquer pop-up aparecer */
 export interface OutreachGate {

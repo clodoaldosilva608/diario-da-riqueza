@@ -46,6 +46,8 @@ interface AppState {
   shareNudgeLastAt: number | null;
   /** Última exibição do pop-up do método/ajuda (epoch ms, null = nunca) */
   methodNudgeLastAt: number | null;
+  /** Última exibição do pop-up "siga no TikTok/Instagram" (epoch ms, null = nunca) */
+  followNudgeLastAt: number | null;
   /** Tour guiado de primeira visita (persistido) */
   tourDone: boolean;
   /** Tour aberto agora (transiente) */
@@ -72,6 +74,7 @@ interface AppState {
   setSitePromoShown: (at: number) => void;
   setShareNudgeShown: (at: number) => void;
   setMethodNudgeShown: (at: number) => void;
+  setFollowNudgeShown: (at: number) => void;
   setTourDone: (v: boolean) => void;
   setTourOpen: (v: boolean) => void;
   celebrate: (xp: number, message: string) => void;
@@ -107,6 +110,7 @@ export const useAppStore = create<AppState>()(
       sitePromoLastAt: null,
       shareNudgeLastAt: null,
       methodNudgeLastAt: null,
+      followNudgeLastAt: null,
       tourDone: false,
       tourOpen: false,
       celebration: null,
@@ -131,6 +135,7 @@ export const useAppStore = create<AppState>()(
       setSitePromoShown: (at) => set({ sitePromoLastAt: at }),
       setShareNudgeShown: (at) => set({ shareNudgeLastAt: at }),
       setMethodNudgeShown: (at) => set({ methodNudgeLastAt: at }),
+      setFollowNudgeShown: (at) => set({ followNudgeLastAt: at }),
       setTourDone: (v) => set({ tourDone: v }),
       setTourOpen: (v) => set({ tourOpen: v }),
       celebrate: (xp, message) => set({ celebration: { xp, message } }),
