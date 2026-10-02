@@ -3,9 +3,9 @@
 /**
  * SupportOptions — seção dedicada aos PLANOS/PREÇOS da landing page.
  *
- * É o ÚNICO lugar da landing onde valores (R$) aparecem — posicionada
- * no fim da página, depois do Mural dos Fundadores, para que a dobra
- * inicial foque no "100% gratuito" sem gerar má impressão.
+ * É o ÚNICO lugar da landing onde valores (R$) aparecem — e NÃO fica
+ * visível na página: é montada sob demanda quando o visitante clica em
+ * "Planos de apoio" no menu superior (a landing rola até ela no mount).
  *
  * 3 tiers fixos pagos no checkout hospedado da Cakto (Pix/cartão) +
  * destaque do Apoiador Fundador (assinatura mensal) + opção de valor

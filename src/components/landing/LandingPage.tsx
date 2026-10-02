@@ -11,7 +11,7 @@
  * Sem depoimentos, números de usuários ou parceiros inventados.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 // Animações: apenas no hero (acima da dobra). Seções abaixo são estáticas
@@ -166,11 +166,24 @@ const PRIVACY = [
 
 export function LandingPage({ onEnter, enterLabel = 'Começar gratuitamente', onExit }: LandingProps) {
   const [pixOpen, setPixOpen] = useState(false);
+  const [planosOpen, setPlanosOpen] = useState(false);
   const year = new Date().getFullYear();
 
   function scrollTo(id: string) {
     document.getElementById(id)?.scrollIntoView({ block: 'start' });
   }
+
+  // A seção de planos (#apoio) só é montada quando o visitante clica em
+  // "Planos de apoio" — após o mount, rola suavemente até ela.
+  useEffect(() => {
+    if (!planosOpen) return;
+    const raf = requestAnimationFrame(() => {
+      document.getElementById('apoio')?.scrollIntoView({
+        behavior: 'smooth', block: 'start',
+      });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [planosOpen]);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -209,6 +222,19 @@ export function LandingPage({ onEnter, enterLabel = 'Começar gratuitamente', on
               className="hidden h-10 sm:inline-flex"
             >
               Como funciona
+            </Button>
+            {/* Link discreto para os planos — a seção só existe no DOM após o clique */}
+            <Button
+              variant="ghost"
+              onClick={() => setPlanosOpen(true)}
+              className="h-10 gap-1.5 text-muted-foreground hover:text-foreground"
+              aria-label="Planos de apoio"
+              aria-controls="apoio"
+              aria-expanded={planosOpen}
+              title="Ver os planos de apoio ao projeto"
+            >
+              <HeartHandshake className="h-4 w-4 text-gold" aria-hidden="true" />
+              <span className="hidden sm:inline">Planos de apoio</span>
             </Button>
             <Button
               onClick={onEnter}
@@ -556,10 +582,10 @@ export function LandingPage({ onEnter, enterLabel = 'Começar gratuitamente', on
         <FounderWall />
 
         {/* ========== PLANOS DE APOIO — seção dedicada aos preços ==========
-            Único lugar da landing onde valores aparecem: fica no fim da
-            página, depois da prova social do mural, para não gerar má
-            impressão na primeira dobra. */}
-        <SupportOptions />
+            NÃO fica visível na landing: só é montada quando o visitante
+            clica em "Planos de apoio" no menu superior — o useEffect
+            rola automaticamente até ela. */}
+        {planosOpen && <SupportOptions />}
 
         {/* ============================ CTA FINAL ============================ */}
         <section aria-labelledby="cta-final-titulo" className="relative overflow-hidden border-t border-border/60">
