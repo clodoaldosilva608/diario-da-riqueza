@@ -552,11 +552,14 @@ export function LandingPage({ onEnter, enterLabel = 'Começar gratuitamente', on
           </div>
         </section>
 
-        {/* ==================== APOIE O PROJETO (CAKTO) ==================== */}
-        <SupportOptions />
-
         {/* ==================== MURAL DOS FUNDADORES ==================== */}
         <FounderWall />
+
+        {/* ========== PLANOS DE APOIO — seção dedicada aos preços ==========
+            Único lugar da landing onde valores aparecem: fica no fim da
+            página, depois da prova social do mural, para não gerar má
+            impressão na primeira dobra. */}
+        <SupportOptions />
 
         {/* ============================ CTA FINAL ============================ */}
         <section aria-labelledby="cta-final-titulo" className="relative overflow-hidden border-t border-border/60">

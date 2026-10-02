@@ -5,8 +5,9 @@
  *
  * - Topo: 3 valores fixos no checkout seguro da Cakto (Pix/cartão) +
  *   destaque do Apoiador Fundador (assinatura mensal, Mural dos Fundadores).
- * - Abaixo: Pix direto do criador com VALOR LIVRE — chave (telefone) legível
- *   e cópia normalizada, QR Code do BR Code oficial do banco.
+ * - Abaixo: Pix direto do criador com VALOR LIVRE — chave (telefone)
+ *   OCULTA por privacidade (só o botão copia, com cópia normalizada),
+ *   QR Code do BR Code oficial do banco.
  * - QR Code Pix: PNG estático importado (asset com hash → cache-first no SW →
  *   funciona offline), verificado em scripts/generate_pix_qr.py.
  * - Segurança: apenas exibição e cópia — nenhum dado bancário é coletado,
@@ -24,7 +25,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import {
-  PIX_BR_CODE, PIX_KEY_DISPLAY, PIX_KEY_NORMALIZED, PIX_RECEIVER_NAME,
+  PIX_BR_CODE, PIX_KEY_NORMALIZED, PIX_RECEIVER_NAME,
   PIX_SUPPORT_INTRO, PROJECT_NAME,
 } from '@/lib/contact';
 import {
@@ -71,7 +72,7 @@ export function PixSupportDialog({
       flashCopied('key', 'Chave Pix copiada!', 'Cole no app do seu banco para apoiar o projeto.');
     } else {
       toast.error('Não foi possível copiar automaticamente.', {
-        description: 'Selecione a chave destacada e copie manualmente.',
+        description: 'Tente novamente ou escaneie o QR Code acima.',
       });
     }
   }
@@ -186,11 +187,9 @@ export function PixSupportDialog({
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Chave Pix — telefone
             </p>
-            <p
-              className="mt-1 select-all font-mono text-lg font-bold tracking-wide text-gold"
-              title="Toque e segure (ou dê dois cliques) para selecionar manualmente"
-            >
-              {PIX_KEY_DISPLAY}
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+              Por privacidade, o número não é exibido aqui. Use o botão abaixo
+              para copiar a chave automaticamente.
             </p>
             <p className="mt-1 text-[11px] text-muted-foreground">
               Projeto: {PROJECT_NAME} · Recebedor: {PIX_RECEIVER_NAME}

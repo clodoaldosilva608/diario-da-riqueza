@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
-  CAKTO_FOUNDER_CHECKOUT_URL, CAKTO_FOUNDER_PRICE, initialsOf,
+  CAKTO_FOUNDER_CHECKOUT_URL, initialsOf,
   type FounderEntry,
 } from '@/lib/cakto';
 import {
@@ -89,9 +89,9 @@ export function FounderWall() {
           </h2>
           <p className="mt-4 text-base leading-relaxed text-muted-foreground">
             Quem vira <span className="font-semibold text-foreground">Apoiador Fundador</span>{' '}
-            ({`R$ ${CAKTO_FOUNDER_PRICE.toFixed(2).replace('.', ',')}/mês`}) tem o nome
-            gravado aqui, na página inicial, enquanto a assinatura estiver ativa.
-            É o apoio que mantém o Diário da Riqueza 100% gratuito e offline para todos.
+            tem o nome gravado aqui, na página inicial, enquanto a assinatura
+            estiver ativa. É o apoio que mantém o Diário da Riqueza 100%
+            gratuito e offline para todos.
           </p>
         </div>
 
