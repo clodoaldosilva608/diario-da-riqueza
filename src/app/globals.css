@@ -271,3 +271,20 @@
     animation: none;
   }
 }
+
+/* ============================================================
+   Revelação da seção de planos (montada sob demanda na landing).
+   Entra suave (fade + subida) e respeita prefers-reduced-motion.
+   ============================================================ */
+@keyframes planos-reveal {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+.planos-reveal {
+  animation: planos-reveal 0.45s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .planos-reveal {
+    animation: none;
+  }
+}

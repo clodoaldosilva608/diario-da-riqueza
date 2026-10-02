@@ -11,7 +11,7 @@
  * Sem depoimentos, números de usuários ou parceiros inventados.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 // Animações: apenas no hero (acima da dobra). Seções abaixo são estáticas
@@ -20,7 +20,7 @@ import {
   ArrowRight, BookOpenCheck, CheckCircle2, CloudOff, ExternalLink, FileDown,
   FileText, Flame, FolderSync, GraduationCap, HardDrive, HeartHandshake, Info,
   Link2, Mail, NotebookPen, PenLine, ScrollText, ShieldCheck, SlidersHorizontal,
-  Sparkles, Target, TrendingUp, Trophy, Wallet,
+  Sparkles, Target, TrendingUp, Trophy, Wallet, X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -167,22 +167,32 @@ const PRIVACY = [
 export function LandingPage({ onEnter, enterLabel = 'Começar gratuitamente', onExit }: LandingProps) {
   const [pixOpen, setPixOpen] = useState(false);
   const [planosOpen, setPlanosOpen] = useState(false);
+  // Posição do visitante ao abrir os planos — devolvida ao fechar a seção
+  const planosReturnY = useRef(0);
+  const planosJaAbriu = useRef(false);
   const year = new Date().getFullYear();
 
   function scrollTo(id: string) {
     document.getElementById(id)?.scrollIntoView({ block: 'start' });
   }
 
-  // A seção de planos (#apoio) só é montada quando o visitante clica em
-  // "Planos de apoio" — após o mount, rola suavemente até ela.
+  // A seção de planos (#apoio) só é montada enquanto o visitante deseja
+  // vê-la: ao abrir, rola suavemente até ela; ao fechar, a seção desmonta
+  // e o visitante volta exatamente para onde estava na página.
   useEffect(() => {
-    if (!planosOpen) return;
-    const raf = requestAnimationFrame(() => {
-      document.getElementById('apoio')?.scrollIntoView({
-        behavior: 'smooth', block: 'start',
+    if (planosOpen) {
+      planosJaAbriu.current = true;
+      planosReturnY.current = window.scrollY;
+      const raf = requestAnimationFrame(() => {
+        document.getElementById('apoio')?.scrollIntoView({
+          behavior: 'smooth', block: 'start',
+        });
       });
-    });
-    return () => cancelAnimationFrame(raf);
+      return () => cancelAnimationFrame(raf);
+    }
+    if (!planosJaAbriu.current) return; // primeiro render — nada a devolver
+    planosJaAbriu.current = false;
+    window.scrollTo({ top: planosReturnY.current });
   }, [planosOpen]);
 
   return (
@@ -223,18 +233,29 @@ export function LandingPage({ onEnter, enterLabel = 'Começar gratuitamente', on
             >
               Como funciona
             </Button>
-            {/* Link discreto para os planos — a seção só existe no DOM após o clique */}
+            {/* Link discreto para os planos — alterna abrir/fechar; a seção
+                só existe no DOM enquanto estiver aberta */}
             <Button
               variant="ghost"
-              onClick={() => setPlanosOpen(true)}
-              className="h-10 gap-1.5 text-muted-foreground hover:text-foreground"
-              aria-label="Planos de apoio"
+              onClick={() => setPlanosOpen((v) => !v)}
+              className={
+                planosOpen
+                  ? 'h-10 gap-1.5 text-foreground'
+                  : 'h-10 gap-1.5 text-muted-foreground hover:text-foreground'
+              }
+              aria-label={planosOpen ? 'Fechar planos de apoio' : 'Planos de apoio'}
               aria-controls="apoio"
               aria-expanded={planosOpen}
-              title="Ver os planos de apoio ao projeto"
+              title={planosOpen ? 'Fechar a seção de planos' : 'Ver os planos de apoio ao projeto'}
             >
-              <HeartHandshake className="h-4 w-4 text-gold" aria-hidden="true" />
-              <span className="hidden sm:inline">Planos de apoio</span>
+              {planosOpen ? (
+                <X className="h-4 w-4 text-gold" aria-hidden="true" />
+              ) : (
+                <HeartHandshake className="h-4 w-4 text-gold" aria-hidden="true" />
+              )}
+              <span className="hidden sm:inline">
+                {planosOpen ? 'Fechar planos' : 'Planos de apoio'}
+              </span>
             </Button>
             <Button
               onClick={onEnter}

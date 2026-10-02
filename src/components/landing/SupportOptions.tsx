@@ -31,7 +31,7 @@ export function SupportOptions() {
     <section
       id="apoio"
       aria-labelledby="apoio-titulo"
-      className="scroll-mt-20 border-t border-border/60 bg-muted/30"
+      className="planos-reveal scroll-mt-20 border-t border-border/60 bg-muted/30"
     >
       <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-2xl text-center">
