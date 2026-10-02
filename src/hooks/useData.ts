@@ -71,6 +71,28 @@ export function useBackups() {
   return useLiveQuery(() => db.backups.orderBy('createdAt').reverse().toArray(), [], []);
 }
 
+/** Depósitos de um cofrinho (ou todos, sem filtro) — mais recentes primeiro */
+export function useDreamDeposits(dreamId?: number) {
+  return useLiveQuery(
+    async () => {
+      const all = await db.dreamDeposits.orderBy('date').reverse().toArray();
+      return dreamId === undefined ? all : all.filter((d) => d.dreamId === dreamId);
+    },
+    [dreamId],
+    [],
+  );
+}
+
+/** Lotes de importação de extratos (histórico) */
+export function useImportBatches() {
+  return useLiveQuery(() => db.importBatches.orderBy('importedAt').reverse().toArray(), [], []);
+}
+
+/** Resgates de desafios — para bloquear XP duplicado por semana */
+export function useChallengeCompletions() {
+  return useLiveQuery(() => db.challengeCompletions.toArray(), [], []);
+}
+
 /** Anos que possuem lançamentos/entradas (para o seletor de diários) */
 export function useAvailableYears() {
   return useLiveQuery(async () => {

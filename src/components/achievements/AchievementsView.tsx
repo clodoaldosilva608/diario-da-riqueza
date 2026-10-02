@@ -9,8 +9,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { SectionHeader } from '@/components/shared/ui-kit';
-import { useAchievements, useEntries, useGamification } from '@/hooks/useData';
+import { useAchievements, useEntries, useGamification, useProfile } from '@/hooks/useData';
 import { ACHIEVEMENTS } from '@/gamification/engine';
+import { ChallengesSection } from '@/components/gamification/ChallengesSection';
 import { useAppStore } from '@/stores/useAppStore';
 import { cn } from '@/lib/utils';
 
@@ -34,6 +35,7 @@ export function AchievementsView() {
   const unlocked = useAchievements();
   const entries = useEntries();
   const gam = useGamification(entries);
+  const profile = useProfile();
   const unlockedKeys = new Set(unlocked.map((a) => a.key));
 
   const pct = Math.round((unlockedKeys.size / ACHIEVEMENTS.length) * 100);
@@ -59,6 +61,17 @@ export function AchievementsView() {
           </p>
         </CardContent>
       </Card>
+
+      {/* Desafios da semana + selo compartilhável */}
+      <ChallengesSection
+        badgeData={{
+          name: profile?.name ?? '',
+          streak: gam.streak,
+          recordStreak: gam.recordStreak,
+          levelName: gam.level.name,
+          totalXP: gam.totalXP,
+        }}
+      />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {ACHIEVEMENTS.map((a) => {

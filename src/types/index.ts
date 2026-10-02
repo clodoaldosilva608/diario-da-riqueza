@@ -56,7 +56,8 @@ export type XPType =
   | 'pratica' // +40 colocou em prática
   | 'estudo' // +30 estudo concluído
   | 'streak' // bônus por consistência
-  | 'meta'; // +25 meta atingida
+  | 'meta' // +25 meta atingida
+  | 'desafio'; // +15..50 desafio da semana resgatado
 
 export const XP_RULES: Record<XPType, number> = {
   registro_dia: 50,
@@ -64,6 +65,7 @@ export const XP_RULES: Record<XPType, number> = {
   estudo: 30,
   streak: 0, // dinâmico (10 / 25 / 50 por tier)
   meta: 25,
+  desafio: 0, // dinâmico (definido por desafio)
 };
 
 export type ViewKey =
@@ -114,6 +116,8 @@ export interface Dream {
   title: string;
   description?: string;
   achieved: boolean;
+  /** Meta do cofrinho (R$) — habilita o modo poupança do sonho */
+  targetValue?: number;
   createdAt: string;
   updatedAt?: string;
   /** Dado semeado como exemplo — pode ser limpo em massa nas Configurações */
@@ -309,3 +313,56 @@ export interface ExportPayload {
 
 /** Onde o arquivo foi salvo */
 export type SaveDestination = 'folder' | 'download';
+
+/* ============================== NOVAS FEATURES (v4) ============================== */
+
+/**
+ * Depósito no cofrinho de um sonho (piggy bank).
+ * Conecta o Orçamento aos Sonhos: cada depósito é um passo registrado
+ * em direção ao sonho — com histórico auditável.
+ */
+export interface DreamDeposit {
+  id?: number;
+  /** id local do sonho (Dexie auto-increment) */
+  dreamId: number;
+  /** uid do sonho — vínculo estável entre dispositivos no sync E2E */
+  dreamUid?: string;
+  /** Valor guardado em R$ (sempre positivo) */
+  amount: number;
+  /** 'yyyy-MM-dd' */
+  date: string;
+  note?: string;
+  /** true quando o depósito também virou despesa no Orçamento */
+  registeredInBudget?: boolean;
+  createdAt: string;
+}
+
+/**
+ * Lote de importação de extrato (OFX/CSV) — rastreabilidade do Orçamento.
+ */
+export interface ImportBatch {
+  id?: number;
+  fileName: string;
+  format: 'ofx' | 'csv';
+  /** Quantidade efetivamente importada (após dedupe) */
+  imported: number;
+  /** Quantidade pulada por duplicidade */
+  skipped: number;
+  /** Período coberto pelo extrato (min–max das datas) */
+  from?: string;
+  to?: string;
+  importedAt: string;
+}
+
+/**
+ * Resgate de desafio concluído — chave = `${challengeId}:${periodKey}`
+ * garante XP único por desafio/semana.
+ */
+export interface ChallengeCompletion {
+  key: string;
+  challengeId: string;
+  /** Ex.: '2026-W40' (semana ISO) */
+  periodKey: string;
+  completedAt: string;
+  xpAwarded: number;
+}

@@ -15,8 +15,10 @@ import type {
   BudgetEntry,
   DiaryEntry,
   Dream,
+  DreamDeposit,
   EntryTemplate,
   Goal,
+  ImportBatch,
   Profile,
   Study,
   EntryTemplate as Template,
@@ -78,7 +80,7 @@ async function checkAchievements(): Promise<AchievementDef[]> {
 }
 
 async function addXP(
-  type: 'registro_dia' | 'pratica' | 'estudo' | 'streak' | 'meta',
+  type: 'registro_dia' | 'pratica' | 'estudo' | 'streak' | 'meta' | 'desafio',
   amount: number,
   date: string,
   description?: string,
@@ -277,6 +279,133 @@ export async function deleteGoal(id: number): Promise<void> {
   const goal = await db.goals.get(id);
   await logDeletion('goals', goal?.uid);
   await db.goals.delete(id);
+}
+
+/* ============================== COFRINHOS (PIGGY BANKS) ============================== */
+
+/** Define/atualiza a meta de poupança de um sonho (habilita o cofrinho) */
+export async function setDreamTarget(id: number, targetValue: number | undefined): Promise<void> {
+  await db.dreams.update(id, { targetValue, updatedAt: new Date().toISOString() });
+}
+
+export interface DreamDepositInput {
+  dreamId: number;
+  amount: number;
+  date: string;
+  note?: string;
+  /** Também registrar como despesa "Investimentos" no Orçamento */
+  alsoBudget?: boolean;
+}
+
+/**
+ * Guarda dinheiro no cofrinho de um sonho. Opcionalmente cria o
+ * lançamento correspondente no Orçamento (despesa de Investimentos),
+ * conectando as duas abas.
+ */
+export async function addDreamDeposit(input: DreamDepositInput): Promise<ActionResult> {
+  const amount = Math.round(Math.abs(input.amount) * 100) / 100;
+  if (!(amount > 0)) return { xpGained: 0, newAchievements: [] };
+  const now = new Date().toISOString();
+  const dream = await db.dreams.get(input.dreamId);
+  await db.dreamDeposits.add({
+    dreamId: input.dreamId,
+    dreamUid: dream?.uid,
+    amount,
+    date: input.date,
+    note: input.note?.trim() || undefined,
+    createdAt: now,
+  });
+  if (input.alsoBudget) {
+    await addBudgetEntry({
+      type: 'despesa',
+      category: 'Investimentos',
+      description: `Cofrinho de sonho`,
+      value: amount,
+      date: input.date,
+      frequency: 'unica',
+    });
+    // marca o ÚLTIMO depósito do sonho como registrado no orçamento
+    const last = await db.dreamDeposits.where('dreamId').equals(input.dreamId).last();
+    if (last?.id) await db.dreamDeposits.update(last.id, { registeredInBudget: true });
+  }
+  const newAchievements = await checkAchievements();
+  return { xpGained: 0, newAchievements };
+}
+
+/** Remove um depósito do cofrinho (correção manual) */
+export async function deleteDreamDeposit(id: number): Promise<void> {
+  await db.dreamDeposits.delete(id);
+}
+
+/* ============================== IMPORTAÇÃO DE EXTRATOS ============================== */
+
+export interface ImportRowInput {
+  type: BudgetEntry['type'];
+  category: string;
+  description: string;
+  value: number;
+  date: string;
+}
+
+/**
+ * Importa em lote as linhas confirmadas pelo usuário no preview.
+ * Registra o lote (ImportBatch) para rastreabilidade e roda as conquistas.
+ */
+export async function importBudgetEntries(
+  rows: ImportRowInput[],
+  meta: { fileName: string; format: 'ofx' | 'csv'; skipped: number },
+): Promise<{ imported: number }> {
+  const now = new Date().toISOString();
+  await db.transaction('rw', [db.budget, db.importBatches], async () => {
+    await db.budget.bulkAdd(
+      rows.map((r) => ({
+        ...r,
+        value: Math.round(Math.abs(r.value) * 100) / 100,
+        frequency: 'unica' as const,
+        uid: newUid(),
+        createdAt: now,
+        updatedAt: now,
+      })),
+    );
+    const dates = rows.map((r) => r.date).sort();
+    await db.importBatches.add({
+      fileName: meta.fileName.slice(0, 160),
+      format: meta.format,
+      imported: rows.length,
+      skipped: meta.skipped,
+      from: dates[0],
+      to: dates[dates.length - 1],
+      importedAt: now,
+    });
+  });
+  await checkAchievements();
+  return { imported: rows.length };
+}
+
+/* ============================== DESAFIOS DA SEMANA ============================== */
+
+/**
+ * Resgata o XP de um desafio concluído. A chave única
+ * `${challengeId}:${periodKey}` garante XP uma única vez por semana.
+ */
+export async function completeChallenge(
+  challengeId: string,
+  periodKey: string,
+  xp: number,
+): Promise<ActionResult> {
+  const key = `${challengeId}:${periodKey}`;
+  const existing = await db.challengeCompletions.get(key);
+  if (existing) return { xpGained: 0, newAchievements: [] };
+  await db.challengeCompletions.put({
+    key,
+    challengeId,
+    periodKey,
+    completedAt: new Date().toISOString(),
+    xpAwarded: xp,
+  });
+  await addXP('desafio', xp, todayISO(), `Desafio da semana: ${challengeId}`);
+  const newAchievements = await checkAchievements();
+  return { xpGained: xp, newAchievements };
 }
 
 /* ============================== ORÇAMENTO ============================== */

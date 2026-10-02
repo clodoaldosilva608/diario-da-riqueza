@@ -46,6 +46,8 @@ import {
 import { exportData, type ExportScope } from '@/export';
 import { useAppStore } from '@/stores/useAppStore';
 import { requestNotificationPermission } from '@/hooks/useReminder';
+import { PushSettings } from './PushSettings';
+import { SyncSettings } from './SyncSettings';
 import { countExampleData, clearExampleData } from '@/db/seed';
 import type { ExportFormat } from '@/types';
 
@@ -491,6 +493,12 @@ export function SettingsView() {
           </div>
         </CardContent>
       </Card>
+
+      {/* ===================== PUSH (APP FECHADO) ===================== */}
+      <PushSettings />
+
+      {/* ===================== SYNC MULTI-DISPOSITIVO E2E ===================== */}
+      <SyncSettings />
 
       {/* ===================== TEMA ===================== */}
       <Card>

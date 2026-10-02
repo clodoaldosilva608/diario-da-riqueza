@@ -20,6 +20,9 @@ import type {
   LocalBackup,
   EntryTemplate,
   DeletedLogEntry,
+  DreamDeposit,
+  ImportBatch,
+  ChallengeCompletion,
 } from '@/types';
 
 /** Handle da pasta raiz persistido no IndexedDB (structured-cloneable no Chromium) */
@@ -53,12 +56,20 @@ export class DiarioRiquezaDB extends Dexie {
   handles!: Table<StoredHandle, string>;
   /** Tombstones de deleção — sync multi-dispositivo sem ressurreição */
   deletedLog!: Table<DeletedLogEntry, string>;
+  /** Depósitos nos cofrinhos dos sonhos (piggy banks) */
+  dreamDeposits!: Table<DreamDeposit, number>;
+  /** Lotes de importação de extratos OFX/CSV */
+  importBatches!: Table<ImportBatch, number>;
+  /** Resgates de desafios (XP único por desafio/semana) */
+  challengeCompletions!: Table<ChallengeCompletion, string>;
 
   constructor() {
     super('diario_da_riqueza');
     // v2: createdAt indexado em studies/templates (necessário para orderBy)
     // v3: + deleted_log (tombstones do sync Obsidian)
-    this.version(3).stores({
+    // v4: + dreamDeposits (cofrinhos), importBatches (extratos),
+    //      challengeCompletions (desafios da semana)
+    this.version(4).stores({
       profile: 'id',
       dreams: '++id, achieved, createdAt',
       goals: '++id, category, status, createdAt, deadline',
@@ -72,6 +83,9 @@ export class DiarioRiquezaDB extends Dexie {
       templates: '++id, name, createdAt',
       handles: 'key',
       deletedLog: 'key, deletedAt',
+      dreamDeposits: '++id, dreamId, date',
+      importBatches: '++id, importedAt',
+      challengeCompletions: 'key, completedAt',
     });
   }
 }
@@ -255,6 +269,9 @@ export async function wipeAllData(): Promise<void> {
       db.backups,
       db.templates,
       db.deletedLog,
+      db.dreamDeposits,
+      db.importBatches,
+      db.challengeCompletions,
     ],
     async () => {
       await Promise.all([
@@ -270,6 +287,9 @@ export async function wipeAllData(): Promise<void> {
         db.backups.clear(),
         db.templates.clear(),
         db.deletedLog.clear(),
+        db.dreamDeposits.clear(),
+        db.importBatches.clear(),
+        db.challengeCompletions.clear(),
       ]);
     },
   );
@@ -294,6 +314,10 @@ export interface FullDump {
   templates: EntryTemplate[];
   /** Tombstones — sincronizados com o vault e backups completos */
   deletedLog?: DeletedLogEntry[];
+  /** v4 — presentes em backups novos; restauração tolera ausência */
+  dreamDeposits?: DreamDeposit[];
+  importBatches?: ImportBatch[];
+  challengeCompletions?: ChallengeCompletion[];
 }
 
 export async function dumpAll(): Promise<FullDump> {
@@ -310,6 +334,9 @@ export async function dumpAll(): Promise<FullDump> {
     backups,
     templates,
     deletedLog,
+    dreamDeposits,
+    importBatches,
+    challengeCompletions,
   ] = await Promise.all([
     db.profile.toArray(),
     db.dreams.toArray(),
@@ -323,6 +350,9 @@ export async function dumpAll(): Promise<FullDump> {
     db.backups.toArray(),
     db.templates.toArray(),
     db.deletedLog.toArray(),
+    db.dreamDeposits.toArray(),
+    db.importBatches.toArray(),
+    db.challengeCompletions.toArray(),
   ]);
   return {
     version: 1,
@@ -339,6 +369,9 @@ export async function dumpAll(): Promise<FullDump> {
     backups,
     templates,
     deletedLog,
+    dreamDeposits,
+    importBatches,
+    challengeCompletions,
   };
 }
 
@@ -376,6 +409,12 @@ export async function restoreDump(dump: FullDump): Promise<void> {
       if (dump.achievements) await db.achievements.bulkPut(dump.achievements);
       if (dump.backups) await db.backups.bulkPut(dump.backups);
       if (dump.templates) await db.templates.bulkPut(dump.templates);
+      // v4 — tolerante a backups antigos sem essas tabelas
+      if (dump.dreamDeposits) await db.dreamDeposits.bulkPut(dump.dreamDeposits);
+      if (dump.importBatches) await db.importBatches.bulkPut(dump.importBatches);
+      if (dump.challengeCompletions) {
+        await db.challengeCompletions.bulkPut(dump.challengeCompletions);
+      }
       // O estado volta a ser o do backup (inclui tombstones, se houver)
       await db.deletedLog.clear();
       if (dump.deletedLog) await db.deletedLog.bulkPut(dump.deletedLog);

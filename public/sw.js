@@ -121,3 +121,42 @@ self.addEventListener('fetch', (event) => {
     }),
   );
 });
+
+/* ============================== WEB PUSH ==============================
+ * Notificações do servidor (lembrete diário via cron + avisos do criador).
+ * Payload JSON: {title, body, url?, tag?}
+ */
+
+self.addEventListener('push', (event) => {
+  let data = { title: 'Diário da Riqueza', body: 'Toque para abrir o app.', url: '/' };
+  try {
+    if (event.data) data = { ...data, ...event.data.json() };
+  } catch {
+    /* payload não-JSON: usa o default */
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      tag: data.tag || 'dr-push',
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      data: { url: data.url || '/' },
+    }),
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || '/';
+  event.waitUntil(
+    (async () => {
+      const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      for (const client of clientList) {
+        if (new URL(client.url).pathname === url && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(url);
+    })(),
+  );
+});

@@ -9,7 +9,7 @@ import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
   Wallet, Plus, TrendingUp, TrendingDown, PiggyBank, Trash2, Pencil,
-  Repeat, CalendarClock, ChartPie,
+  Repeat, CalendarClock, ChartPie, FileUp,
 } from 'lucide-react';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -31,6 +31,7 @@ import {
 import { StatCard, SectionHeader } from '@/components/shared/ui-kit';
 import { useBudget, useProfile } from '@/hooks/useData';
 import { addBudgetEntry, updateBudgetEntry, deleteBudgetEntry } from '@/db/actions';
+import { ImportDialog } from './ImportDialog';
 import { useAppStore } from '@/stores/useAppStore';
 import { formatBRL, formatCompactBRL, monthlyTotals, MONTH_NAMES, daysUntil } from '@/lib/format';
 import type { BudgetEntry, BudgetType } from '@/types';
@@ -59,6 +60,7 @@ export function BudgetView() {
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth());
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<BudgetEntry | null>(null);
 
   // Form
@@ -210,14 +212,29 @@ export function BudgetView() {
 
   return (
     <div className="space-y-5">
+      <ImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        budget={budget}
+      />
       <SectionHeader
         icon={Wallet}
         title="Orçamento"
         subtitle={`${MONTH_NAMES[month]} de ${selectedYear} — cada real com destino definido`}
         action={
-          <Button onClick={openNew} className="bg-gold text-black hover:bg-gold-light">
-            <Plus className="mr-1.5 h-4 w-4" /> Lançamento
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setImportOpen(true)}
+              aria-label="Importar extrato bancário OFX ou CSV"
+              title="Importar extrato bancário (OFX/CSV)"
+            >
+              <FileUp className="mr-1.5 h-4 w-4" /> Importar extrato
+            </Button>
+            <Button onClick={openNew} className="bg-gold text-black hover:bg-gold-light">
+              <Plus className="mr-1.5 h-4 w-4" /> Lançamento
+            </Button>
+          </div>
         }
       />
 

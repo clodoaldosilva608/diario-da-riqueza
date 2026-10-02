@@ -16,6 +16,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatCard, SectionHeader } from '@/components/shared/ui-kit';
 import { useEntries, useStudies, useBudget, useXpEvents, useGamification } from '@/hooks/useData';
+import { MonthlyReportSection } from './MonthlyReportSection';
 import { useAppStore } from '@/stores/useAppStore';
 import { formatBRL, formatCompactBRL, monthlyTotals, MONTH_NAMES } from '@/lib/format';
 import { MOOD_LABELS } from '@/types';
@@ -39,6 +40,7 @@ const XP_LABELS: Record<XPType, string> = {
   estudo: 'Estudos',
   streak: 'Streak',
   meta: 'Metas',
+  desafio: 'Desafios',
 };
 
 export function StatsView() {
@@ -149,6 +151,9 @@ export function StatsView() {
           sub={`nível: ${gam.level.name}`}
         />
       </div>
+
+      {/* Relatório do mês — números + comparação + PDF/imagem */}
+      <MonthlyReportSection />
 
       {/* Gráficos */}
       <div className="grid gap-4 md:grid-cols-2">

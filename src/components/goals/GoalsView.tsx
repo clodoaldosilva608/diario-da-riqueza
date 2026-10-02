@@ -31,6 +31,7 @@ import {
 import { SectionHeader, EmptyState } from '@/components/shared/ui-kit';
 import { useDreams, useGoals } from '@/hooks/useData';
 import { addDream, toggleDream, deleteDream, addGoal, updateGoal, deleteGoal } from '@/db/actions';
+import { PiggyBankSection } from './PiggyBank';
 import { useAppStore } from '@/stores/useAppStore';
 import { GOAL_CATEGORY_LABELS } from '@/types';
 import type { Goal, GoalCategory } from '@/types';
@@ -221,35 +222,38 @@ export function GoalsView() {
             {dreams.map((d) => (
               <div
                 key={d.id}
-                className="group flex items-center gap-3 rounded-xl border border-border px-3 py-2.5 transition-colors hover:border-gold/35"
+                className="group rounded-xl border border-border px-3 py-2.5 transition-colors hover:border-gold/35"
               >
-                <button
-                  aria-label={d.achieved ? 'Marcar como não realizado' : 'Marcar como realizado'}
-                  onClick={() => d.id && toggleDream(d).then((r) => {
-                    if (r.newAchievements.length) {
-                      r.newAchievements.forEach((a) =>
-                        toast.success(`🏆 ${a.title}`, { description: a.description }),
-                      );
-                    }
-                  })}
-                >
-                  {d.achieved ? (
-                    <CheckCircle2 className="h-5 w-5 text-emerald-wealth" />
-                  ) : (
-                    <Circle className="h-5 w-5 text-muted-foreground" />
-                  )}
-                </button>
-                <span className={cn('flex-1 text-sm', d.achieved && 'text-muted-foreground line-through')}>
-                  {d.title}
-                </span>
-                {d.achieved && <Badge className="bg-emerald-wealth/15 text-emerald-wealth">Realizado</Badge>}
-                <button
-                  aria-label={`Excluir sonho ${d.title}`}
-                  className="text-muted-foreground opacity-0 transition-opacity hover:text-loss group-hover:opacity-100"
-                  onClick={() => d.id && setConfirmDelete({ kind: 'sonho', id: d.id })}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    aria-label={d.achieved ? 'Marcar como não realizado' : 'Marcar como realizado'}
+                    onClick={() => d.id && toggleDream(d).then((r) => {
+                      if (r.newAchievements.length) {
+                        r.newAchievements.forEach((a) =>
+                          toast.success(`🏆 ${a.title}`, { description: a.description }),
+                        );
+                      }
+                    })}
+                  >
+                    {d.achieved ? (
+                      <CheckCircle2 className="h-5 w-5 text-emerald-wealth" />
+                    ) : (
+                      <Circle className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </button>
+                  <span className={cn('flex-1 text-sm', d.achieved && 'text-muted-foreground line-through')}>
+                    {d.title}
+                  </span>
+                  {d.achieved && <Badge className="bg-emerald-wealth/15 text-emerald-wealth">Realizado</Badge>}
+                  <button
+                    aria-label={`Excluir sonho ${d.title}`}
+                    className="text-muted-foreground opacity-0 transition-opacity hover:text-loss group-hover:opacity-100"
+                    onClick={() => d.id && setConfirmDelete({ kind: 'sonho', id: d.id })}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+                <PiggyBankSection dream={d} />
               </div>
             ))}
           </div>

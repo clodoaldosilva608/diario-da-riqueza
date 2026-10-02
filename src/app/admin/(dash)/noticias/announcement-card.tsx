@@ -11,8 +11,9 @@
  */
 
 import { useRef, useState, useTransition } from 'react';
+import { toast } from 'sonner';
 import {
-  Eye, EyeOff, FileUp, ExternalLink, Pencil, Trash2,
+  Bell, Eye, EyeOff, FileUp, ExternalLink, Loader2, Pencil, Trash2,
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -32,7 +33,43 @@ export function AnnouncementCard({ ann }: { ann: Announcement }) {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, startDelete] = useTransition();
+  const [pushSending, setPushSending] = useState(false);
   const deleteFormRef = useRef<HTMLFormElement>(null);
+
+  /** Envia ESTE aviso como push para todos os inscritos (E2E do lembrete) */
+  async function sendPush() {
+    setPushSending(true);
+    try {
+      const res = await fetch('/api/admin/push/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: ann.title, body: ann.message, url: ann.linkUrl?.startsWith('/') ? ann.linkUrl : '/' }),
+      });
+      const json = (await res.json()) as {
+        ok: boolean; sent?: number; total?: number; expired?: number;
+        persistence?: string; error?: string;
+      };
+      if (!json.ok) {
+        toast.error(json.error ?? 'Falha ao enviar push.');
+        return;
+      }
+      toast.success(
+        `Push enviado para ${json.sent} de ${json.total} dispositivo(s).`,
+        {
+          description:
+            json.persistence === 'memoria'
+              ? 'Atenção: inscrições em memória (configure KV na Vercel para persistência real).'
+              : json.persistence === 'arquivo'
+                ? 'Inscrições persistidas em arquivo (self-host).'
+                : 'Inscrições persistidas no KV.',
+        },
+      );
+    } catch (e) {
+      toast.error('Erro no envio: ' + String(e));
+    } finally {
+      setPushSending(false);
+    }
+  }
 
   function confirmDelete() {
     startDelete(async () => {
@@ -149,6 +186,24 @@ export function AnnouncementCard({ ann }: { ann: Announcement }) {
           onClick={() => setEditOpen(true)}
         >
           <Pencil className="h-3.5 w-3.5" aria-hidden="true" /> Editar
+        </Button>
+
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="rounded-lg border-gold/40 text-gold hover:bg-gold/10"
+          disabled={pushSending}
+          onClick={sendPush}
+          aria-label={`Enviar este aviso como notificação push para todos os inscritos`}
+          title="Envia este aviso como push (quem ativou as notificações recebe)"
+        >
+          {pushSending ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+          ) : (
+            <Bell className="h-3.5 w-3.5" aria-hidden="true" />
+          )}
+          Enviar push
         </Button>
 
         <Button

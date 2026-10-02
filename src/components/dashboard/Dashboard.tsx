@@ -28,6 +28,7 @@ import { ACHIEVEMENTS } from '@/gamification/engine';
 import { GoalProgressBar, StatCard, LevelBadge } from '@/components/shared/ui-kit';
 import { Heatmap } from '@/components/dashboard/Heatmap';
 import { RegistrarHojeButton } from '@/components/layout/AppShell';
+import { ChallengesSection } from '@/components/gamification/ChallengesSection';
 import { SupportSection } from '@/components/support/SupportSection';
 import { PermanentMessage } from '@/components/support/PermanentMessage';
 import { AnnouncementBanner } from '@/components/announcements/AnnouncementBanner';
@@ -190,6 +191,18 @@ export function Dashboard({ onOpenEntry }: { onOpenEntry: (date: string) => void
           </div>
         </motion.div>
       )}
+
+      {/* Desafios da semana (XP resgatável) */}
+      <ChallengesSection
+        compact
+        badgeData={{
+          name: profile?.name ?? '',
+          streak: gam.streak,
+          recordStreak: gam.recordStreak,
+          levelName: gam.level.name,
+          totalXP: gam.totalXP,
+        }}
+      />
 
       {/* Meta anual + mensagem do dia */}
       <div className="grid gap-4 md:grid-cols-2">
