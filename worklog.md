@@ -596,3 +596,21 @@ Stage Summary:
 - Modal Pix: número do telefone não aparece mais — só tipo da chave, recebedor, QR Code e botões de copiar
 - Preços consolidados: única seção com valores é "Apoie o projeto" (#apoio), agora no fim da landing após o mural; dobra inicial 100% focada em gratuito
 - Aprendizado: find text do agent-browser pode falhar em <button> com ícone+texto — usar eval com seletor de aria-label
+
+---
+Task ID: 22
+Agent: Super Z (main agent)
+Task: Link discreto "Planos de apoio" no menu + seção de preços oculta até o clique
+
+Work Log:
+- LandingPage.tsx: estado planosOpen (default false) + useEffect que rola suavemente até #apoio (requestAnimationFrame pós-mount); <SupportOptions /> agora é renderizado condicionalmente — {planosOpen && <SupportOptions />} (não existe no DOM antes do clique)
+- Header: botão ghost discreto "Planos de apoio" (HeartHandshake dourado + texto esmaecido; no mobile fica só o ícone, com aria-label completo) entre "Como funciona" e o CTA principal, com aria-controls="apoio" e aria-expanded
+- SupportOptions.tsx: comentário atualizado (montada sob demanda)
+- Qualidade: tsc limpo em src/, eslint ok, build OK, 6/6 suítes (346 checks) verdes
+- Commit a594097 push main -> Vercel
+- FALSO ALARME no monitoramento: polling via HTML nunca vê o conteúdo — a página é SPA client-side ('use client' + skeleton de hidratação no SSR); detecção correta de deploy é grepar os chunks JS (a594097 confirmado no chunk 1205a171)
+- E2E produção (agent-browser): antes do clique #apoio = null e main sem "R$"; botão presente no header; após o clique #apoio montado com R$ 5/15/50/9,90 e scrollY=4793 com topo da seção em 80px (scroll-mt ok); screenshots download/landing_menu_discreto.png e landing_planos_revelados.png
+
+Stage Summary:
+- Landing sem nenhum preço visível por padrão; seção de planos só existe no DOM após clicar em "Planos de apoio" (menu superior), que monta e rola automaticamente até ela
+- Aprendizado: nesta SPA, validação de deploy por HTML é inútil (SSR = skeleton) — sempre grepar chunks JS ou usar agent-browser
