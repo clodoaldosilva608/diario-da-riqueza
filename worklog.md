@@ -703,3 +703,24 @@ Stage Summary:
 - Segurança: requireAdmin nas actions, whitelist de extensão, mídia nunca inline, SVG/HTML bloqueados, .env fora do repo
 - Limitação honesta documentada no painel: na Vercel (serverless sem disco) os avisos vivem em memória da instância — leitura do seed commitado funciona; persistência definitiva exige KV/Blob externo
 - Aviso de exemplo "Bem-vindo ao Portal de Notícias!" semeado no data/ (vai para produção com o deploy)
+---
+Task ID: 26
+Agent: Super Z (main agent)
+Task: Mensagem permanente de agradecimento na Dashboard + TikTok oficial do projeto (@dirio.da.riqueza8)
+
+Work Log:
+- src/lib/contact.ts: adicionados PROJECT_TIKTOK_URL/HANDLE (@dirio.da.riqueza8, URL canônica sem params de tracking); FOLLOW_INTRO atualizado
+- Novo src/components/support/PermanentMessage.tsx: card fixo (não dispensável) no topo da Dashboard — agradecimento, apontador para aba Ajuda, botão "Contribua com qualquer valor" (abre PixSupportDialog) e 4 atalhos de redes com TikTok do projeto em destaque dourado
+- Dashboard.tsx: PermanentMessage renderizada após a saudação, antes do AnnouncementBanner
+- SupportSection.tsx: botão "TikTok do projeto" (dourado) + relabel "TikTok do criador"
+- OutreachDialogs.tsx: pop-up "Siga o projeto" com 3 botões (TikTok do projeto em dourado, Instagram, TikTok do criador)
+- LandingPage.tsx: rodapé "Redes sociais" com "TikTok do projeto" em primeiro lugar
+- HelpView.tsx: novo card "Sugestões e dúvidas" (WhatsApp, e-mail, redes) — cumpre a promessa da mensagem permanente
+- Validação: tsc 0 erros em src/, ESLint limpo, next build OK, bun test (suíte não existe mais no workspace — sem bloqueio)
+- E2E local (next start :3111) e produção: mensagem renderizada, botão Ajuda navega, card de sugestões visível, botão contribuir abre painel Pix, links TikTok corretos, 0 erros JS
+- Screenshots: download/task26-*.png (4 evidências)
+
+Stage Summary:
+- Deploy em produção: commit 31d988b em main → Vercel; chunks de produção confirmam conteúdo novo
+- Mensagem permanente visível para TODOS os usuários na Dashboard
+- TikTok oficial do projeto integrado em 5 pontos do app
