@@ -677,3 +677,29 @@ Stage Summary:
 - Causa raiz do "nada acontece" era dupla: falha silenciosa do botão + pop-up automático cobrindo a tela; ambas corrigidas e validadas em produção (desktop + mobile)
 - Regressão completa verde: 9 views + busca + gate admin
 - Deploy 6cabaa2 ao vivo
+---
+Task ID: 25
+Agent: Super Z (main agent)
+Task: Portal de Notícias no /admin — avisos do criador (texto, link, imagem, arquivos) com ativação e banner na dashboard de todos os usuários
+
+Work Log:
+- Modelado Announcement (título, mensagem, link+rótulo, imagem, anexo, active, timestamps) em src/lib/announcements.ts (client-safe, com limites: título 120, texto 4000, imagem 2MB, anexo 3MB, 50 avisos)
+- Store server-only src/lib/announcements-store.ts: data/announcements.json + binários em data/media/<uuid.ext>; na Vercel (FS read-only) degrada para memória e sinaliza persistenceMode()='memoria' (aviso âmbar no painel); leitura funciona via outputFileTracingIncludes
+- APIs públicas: GET /api/announcements (só ativos, newest-first, no-store) e GET /api/announcements/media?k=&name= (Content-Type por extensão; imagens/PDF inline, resto attachment+octet-stream; SVG/HTML/JS bloqueados por whitelist no upload — defesa XSS same-origin; cache immutable)
+- Server actions CRUD em actions.ts (todas com requireAdmin): create/update (useActionState-compatible), toggle (reativar → updatedAt novo = re-notifica), delete (remove mídia órfã); uploads via multipart File→Buffer, validação de extensão/tamanho server-side, safeName() sanitizado
+- Página /admin/noticias: métricas (total/publicados/rascunhos/armazenamento), form de criação com preview de imagem e Switch "Publicar agora", lista de cards com Publicado/Rascunho, toggle, Editar (Dialog com form preenchido e remover mídia atual), Excluir (AlertDialog); nav do painel ganhou "Notícias" (2º item)
+- AnnouncementBanner na Dashboard (topo, acima de Registrar Hoje): fetch /api/announcements + refetch 10min, até 3 avisos, animação spring/stagger, label "AVISO DO CRIADOR", botões de link (dourado) e download (nome+tamanho), imagem lazy; dismiss por usuário guardando id→updatedAt no localStorage (editar/reativar re-notifica); falha de rede = sem banner (nunca quebra a dashboard)
+- BUG REAL CORRIGIDO no caminho: sw.js usava stale-while-revalidate para /api/* — o banner exibia o título ANTIGO por uma visita inteira após edição. SW v2: /api/* network-first (offline → cache), mídia dos avisos cache-first (UUID imutável), CACHE 'diario-riqueza-v2'
+- next.config: experimental.serverActions.bodySizeLimit='12mb' (uploads por server action) + outputFileTracingIncludes data/ p/ leitura semeada na Vercel
+- Aprendizado 'use server': arquivo de actions só pode exportar async functions — ANN_FORM_IDLE/AnnFormState movidos para lib/announcements.ts (quebrou /admin com 500 até corrigir)
+- .env do preview ganhou ADMIN_EMAIL/ADMIN_PASSWORD/ADMIN_SESSION_SECRET (fail-closed sem isso) e foi DESVERSIONADO do git (git rm --cached) para credenciais não irem ao GitHub
+- E2E agent-browser: login admin → criou aviso com imagem+PDF+link (upload real) → Publicado na lista → API count=1 → mídia 200 image/png → banner na dashboard com imagem naturalWidth>0 → dismiss persiste após reload → desativar some / reativar volta (re-notificação) → editar título reflete na dashboard (pós-fix do SW) → rascunho não vai à API → exclusão com AlertDialog apaga mídia (3→2 arquivos) → 0 erros de console
+- Validações: tsc 0 erros, eslint 0, next build OK (/admin/noticias, /api/announcements, /api/announcements/media no manifest), dev daemon reiniciado pós-build
+- Commit ed651c3 + push main (deploy Vercel automático disparado)
+- Screenshots: download/noticias-01-form-preenchido.png, 02-banner-dashboard.png, 03-banner-reativado.png, 04-admin-final.png
+
+Stage Summary:
+- Portal de Notícias completo: /admin/noticias (CRUD + publicação) e banner automático na dashboard de todos os usuários
+- Segurança: requireAdmin nas actions, whitelist de extensão, mídia nunca inline, SVG/HTML bloqueados, .env fora do repo
+- Limitação honesta documentada no painel: na Vercel (serverless sem disco) os avisos vivem em memória da instância — leitura do seed commitado funciona; persistência definitiva exige KV/Blob externo
+- Aviso de exemplo "Bem-vindo ao Portal de Notícias!" semeado no data/ (vai para produção com o deploy)
