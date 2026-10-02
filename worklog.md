@@ -724,3 +724,24 @@ Stage Summary:
 - Deploy em produção: commit 31d988b em main → Vercel; chunks de produção confirmam conteúdo novo
 - Mensagem permanente visível para TODOS os usuários na Dashboard
 - TikTok oficial do projeto integrado em 5 pontos do app
+---
+Task ID: 27
+Agent: Super Z (main agent)
+Task: Plano + implementação completa das 6 features "nível up" (importação OFX/CSV, cofrinhos, desafios+selo, relatório mensal, push real, sync E2E)
+
+Work Log:
+- F1 Dexie v4: +dreamDeposits/importBatches/challengeCompletions; dumps retrocompatíveis (v1 com campos opcionais); XPType 'desafio'
+- F2 src/lib/import/ (ofx.ts, csv.ts, index.ts): parsers tolerantes (SGML/XML, CSV BR), suggestCategory, txFingerprint/dedupe; ImportDialog com preview editável; 17 testes bun
+- F3 PiggyBank.tsx: meta por sonho, depósitos (dreamUid p/ sync), progresso %, opção orçamento; integrado em GoalsView
+- F4 challenges.ts (semana ISO, 4 desafios medidos por dados reais) + ChallengesSection (Dashboard compacta + Conquistas completa) + ShareBadge (canvas 1080×1350, PNG/Web Share)
+- F5 report.ts + monthly-report.ts (PDF jsPDF) + MonthlyReportSection em Estatísticas (comparação vs mês anterior, top categorias, imagem 4:5)
+- F6 push.ts/push-store.ts (VAPID fail-closed, 3 camadas: KV REST → arquivo → memória), 6 rotas /api/push/* + /api/admin/push/send, vercel.json cron 23:00 UTC (20h BRT), SW push+notificationclick, PushSettings, botão "Enviar push" no admin/noticias; chaves VAPID geradas em .env.local (NÃO commitado)
+- F7 sync/ (crypto AES-GCM 256+PBKDF2 250k, merge LWW por uid + tombstones, apply cirúrgico no Dexie), sync-store + /api/sync, SyncSettings (criar/entrar/mesclar/substituir)
+- Validação: tsc 0 erros, eslint limpo, build OK, 27/27 testes bun
+- E2E local (agent-browser): desafios com XP resgatável + conquista, importação CSV real (3 lançamentos no Orçamento), cofrinho (R$500/5.000 = 10%), relatório mensal completo, selo renderizado, cofre E2E criado (blob cifrado 12KB verificado ilegível no servidor), mesclar OK com integridade dos depósitos
+- Deploy: commits d657aa1 + 8e51ef4 → Vercel; produção verificada (push fail-closed aguardando env VAPID)
+
+Stage Summary:
+- 6 features novas em produção; push ativa após configurar VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY na Vercel (chaves no .env.local local)
+- Persistência server-side real requer KV_REST_API_URL/KV_REST_API_TOKEN (Vercel KV/Upstash) — hoje degrada honestamente
+- Pendências herdadas: Task 24 (bug criar sonho) — verificar se o fix de UX atual resolve no dispositivo do usuário
