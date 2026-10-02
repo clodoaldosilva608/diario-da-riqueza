@@ -1,0 +1,17 @@
+[
+  {
+    "id": "bbb0ff14-c1a8-43bd-8114-1f570f0ce2aa",
+    "title": "Bem-vindo ao Portal de Notícias!",
+    "message": "Agora o criador pode avisar todo mundo por aqui: novidades, dicas de riqueza e conteúdos novos aparecem neste banner. Fique de olho — grandes coisas estão por vir.",
+    "linkUrl": "https://diariodariqueza.vercel.app/",
+    "linkLabel": "Ver novidades",
+    "image": {
+      "key": "939ad14c-984d-443d-80b4-78e9c23e031f.png",
+      "name": "noticia-teste.png",
+      "size": 1384
+    },
+    "active": true,
+    "createdAt": "2026-10-02T06:30:46.585Z",
+    "updatedAt": "2026-10-02T06:38:09.073Z"
+  }
+]

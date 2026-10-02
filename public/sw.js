@@ -3,11 +3,15 @@
  *
  * Estratégia:
  *  - Navegações: network-first com fallback para cache e para '/' (shell).
- *  - Estáticos (/_next/static, /icons): cache-first (imutáveis).
+ *  - Estáticos (/_next/static, /icons) e mídia dos avisos (chave UUID
+ *    imutável): cache-first.
+ *  - APIs (/api/*): network-first — avisos do criador e mural de
+ *    fundadores precisam chegar FRESCOS (o SWR servia título antigo por
+ *    uma visita); offline cai para o cache existente.
  *  - Demais GETs: stale-while-revalidate simples.
  */
 
-const CACHE = 'diario-riqueza-v1';
+const CACHE = 'diario-riqueza-v2';
 const PRECACHE = ['/', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -56,8 +60,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Estáticos imutáveis: cache-first
-  const isStatic = url.pathname.startsWith('/_next/static') || url.pathname.startsWith('/icons/');
+  // Estáticos imutáveis + mídia dos avisos (UUID): cache-first
+  const isStatic =
+    url.pathname.startsWith('/_next/static') ||
+    url.pathname.startsWith('/icons/') ||
+    url.pathname === '/api/announcements/media';
   if (isStatic) {
     event.respondWith(
       caches.match(request).then(
@@ -69,6 +76,31 @@ self.addEventListener('fetch', (event) => {
             return response;
           }),
       ),
+    );
+    return;
+  }
+
+  // APIs dinâmicas: network-first (offline → último cache conhecido)
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE).then((c) => c.put(request, copy));
+          }
+          return response;
+        })
+        .catch(async () => {
+          const cached = await caches.match(request);
+          return (
+            cached ??
+            new Response('Offline', {
+              status: 503,
+              statusText: 'Offline',
+            })
+          );
+        }),
     );
     return;
   }

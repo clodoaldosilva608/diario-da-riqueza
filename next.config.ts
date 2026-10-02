@@ -57,6 +57,23 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
+  // Portal de Notícias: uploads (imagem + anexo) trafegam em Server Actions
+  // — o limite padrão de 1 MB estouraria em mídias legítimas (2 MB imagem /
+  // 3 MB anexo + overhead de multipart).
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '12mb',
+    },
+  },
+  // Garante que o acervo do Portal de Notícias (JSON + mídia semeada no
+  // repo) entre no bundle serverless da Vercel — leitura funciona mesmo
+  // com filesystem read-only; escrita degrada para memória com aviso no
+  // painel (src/lib/announcements-store.ts).
+  outputFileTracingIncludes: {
+    '/api/announcements': ['./data/**'],
+    '/api/announcements/media': ['./data/**'],
+    '/admin/noticias': ['./data/**'],
+  },
   async redirects() {
     return [
       {

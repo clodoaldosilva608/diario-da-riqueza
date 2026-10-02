@@ -10,11 +10,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  BarChart3, CreditCard, Crown, Megaphone, Package, Settings, Users, Wallet, Webhook,
+  BarChart3, CreditCard, Crown, Megaphone, Newspaper, Package, Settings, Users, Wallet, Webhook,
 } from 'lucide-react';
 
 const NAV = [
   { href: '/admin', label: 'Dashboard', icon: BarChart3 },
+  { href: '/admin/noticias', label: 'Notícias', icon: Newspaper },
   { href: '/admin/vendas', label: 'Vendas', icon: CreditCard },
   { href: '/admin/assinaturas', label: 'Assinaturas', icon: Wallet },
   { href: '/admin/fundadores', label: 'Fundadores', icon: Crown },
