@@ -30,6 +30,14 @@ import {
 import { SectionHeader } from '@/components/shared/ui-kit';
 import { useAppStore } from '@/stores/useAppStore';
 import { countExampleData, clearExampleData } from '@/db/seed';
+import {
+  InstagramIcon, TikTokIcon, WhatsAppIcon, YouTubeIcon,
+} from '@/components/support/icons';
+import {
+  CONTACT_EMAIL, CONTACT_EMAIL_URL, INSTAGRAM_HANDLE, INSTAGRAM_URL,
+  PROJECT_TIKTOK_HANDLE, PROJECT_TIKTOK_URL, WHATSAPP_URL, YOUTUBE_HANDLE,
+  YOUTUBE_URL,
+} from '@/lib/contact';
 
 /* ============================== CONTEÚDO DO GUIA ============================== */
 
@@ -330,6 +338,110 @@ export function HelpView() {
               </AccordionItem>
             ))}
           </Accordion>
+        </CardContent>
+      </Card>
+
+      {/* ===================== SUGESTÕES E DÚVIDAS ===================== */}
+      <Card className="border-gold/25 bg-gradient-to-br from-gold/10 via-card to-card">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <HelpCircle className="h-4 w-4 text-gold" /> Sugestões e dúvidas
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Sua opinião molda os próximos recursos do Diário da Riqueza. Envie
+            sugestões, dúvidas ou relatos de problemas direto para o criador —
+            todas as mensagens são lidas. Se quiser ajudar o projeto a continuar
+            no ar, considere também apoiar com qualquer valor e seguir o projeto
+            nas redes sociais para acompanhar as novidades.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild className="h-11 bg-[#25D366] text-black hover:bg-[#1fb957]">
+              <a
+                href={WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Enviar sugestão ou dúvida pelo WhatsApp — abre uma conversa com o criador do projeto em nova aba ou no aplicativo"
+                title="Abre uma conversa no WhatsApp com o criador do projeto"
+              >
+                <WhatsAppIcon className="h-4 w-4" aria-hidden="true" />
+                WhatsApp do criador
+              </a>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="h-11 border-gold/40 text-gold hover:bg-gold/10"
+            >
+              <a
+                href={CONTACT_EMAIL_URL}
+                aria-label={`Enviar sugestão ou dúvida por e-mail para ${CONTACT_EMAIL}`}
+                title={CONTACT_EMAIL_URL}
+              >
+                {CONTACT_EMAIL}
+              </a>
+            </Button>
+          </div>
+          <div
+            className="flex flex-wrap items-center gap-2"
+            role="group"
+            aria-label="Siga o Diário da Riqueza em todas as redes sociais"
+          >
+            <span className="w-full text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Siga o projeto:
+            </span>
+            <Button
+              asChild
+              size="sm"
+              className="h-9 bg-gold text-black hover:bg-gold-light"
+            >
+              <a
+                href={PROJECT_TIKTOK_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`TikTok oficial do projeto (${PROJECT_TIKTOK_HANDLE}) — abre em nova aba`}
+                title={`TikTok oficial do projeto ${PROJECT_TIKTOK_HANDLE}`}
+              >
+                <TikTokIcon className="h-4 w-4" aria-hidden="true" />
+                TikTok do projeto
+              </a>
+            </Button>
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className="h-9 border-[#E4405F]/40 text-[#E4405F] hover:bg-[#E4405F]/10"
+            >
+              <a
+                href={INSTAGRAM_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Instagram (${INSTAGRAM_HANDLE}) — abre em nova aba`}
+                title={`Instagram ${INSTAGRAM_HANDLE}`}
+              >
+                <InstagramIcon className="h-4 w-4" aria-hidden="true" />
+                Instagram
+              </a>
+            </Button>
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className="h-9 border-[#FF0000]/40 text-[#FF0000] hover:bg-[#FF0000]/10"
+            >
+              <a
+                href={YOUTUBE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`YouTube (${YOUTUBE_HANDLE}) — abre em nova aba`}
+                title={`YouTube ${YOUTUBE_HANDLE}`}
+              >
+                <YouTubeIcon className="h-4 w-4" aria-hidden="true" />
+                YouTube
+              </a>
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

@@ -33,8 +33,8 @@ import { FounderTicker } from './FounderTicker';
 import {
   BIO_SITE_URL, CONTACT_EMAIL, CONTACT_EMAIL_URL, CREATOR_SECTION_INTRO,
   INSTAGRAM_HANDLE, INSTAGRAM_URL, LINKTREE_URL, PARTNERS_URL,
-  PERSONAL_SITE_URL, TIKTOK_HANDLE, TIKTOK_URL, WHATSAPP_URL, YOUTUBE_HANDLE,
-  YOUTUBE_URL,
+  PERSONAL_SITE_URL, PROJECT_TIKTOK_HANDLE, PROJECT_TIKTOK_URL,
+  TIKTOK_HANDLE, TIKTOK_URL, WHATSAPP_URL, YOUTUBE_HANDLE, YOUTUBE_URL,
 } from '@/lib/contact';
 import { cn } from '@/lib/utils';
 
@@ -779,6 +779,19 @@ export function LandingPage({ onEnter, enterLabel = 'Começar gratuitamente', on
               <ul className="mt-4 space-y-2.5 text-sm">
                 <li>
                   <a
+                    href={PROJECT_TIKTOK_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-gold"
+                    aria-label={`Seguir o TikTok oficial do projeto (${PROJECT_TIKTOK_HANDLE}) — abre em nova aba`}
+                    title={`TikTok oficial do projeto ${PROJECT_TIKTOK_HANDLE}`}
+                  >
+                    <TikTokIcon className="h-4 w-4 text-gold" aria-hidden="true" />
+                    TikTok do projeto
+                  </a>
+                </li>
+                <li>
+                  <a
                     href={INSTAGRAM_URL}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -796,11 +809,11 @@ export function LandingPage({ onEnter, enterLabel = 'Começar gratuitamente', on
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
-                    aria-label={`Seguir no TikTok (${TIKTOK_HANDLE}) — abre em nova aba`}
-                    title={`TikTok ${TIKTOK_HANDLE}`}
+                    aria-label={`Seguir no TikTok do criador (${TIKTOK_HANDLE}) — abre em nova aba`}
+                    title={`TikTok do criador ${TIKTOK_HANDLE}`}
                   >
                     <TikTokIcon className="h-4 w-4 text-foreground" aria-hidden="true" />
-                    TikTok
+                    TikTok do criador
                   </a>
                 </li>
                 <li>

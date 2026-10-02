@@ -21,8 +21,8 @@ import { InstagramIcon, TikTokIcon, WhatsAppIcon, YouTubeIcon } from './icons';
 import { PixSupportDialog } from './PixSupportDialog';
 import { ShareDialog } from './ShareDialog';
 import {
-  INSTAGRAM_HANDLE, INSTAGRAM_URL, TIKTOK_HANDLE, TIKTOK_URL,
-  WHATSAPP_URL, YOUTUBE_HANDLE, YOUTUBE_URL,
+  INSTAGRAM_HANDLE, INSTAGRAM_URL, PROJECT_TIKTOK_HANDLE, PROJECT_TIKTOK_URL,
+  TIKTOK_HANDLE, TIKTOK_URL, WHATSAPP_URL, YOUTUBE_HANDLE, YOUTUBE_URL,
 } from '@/lib/contact';
 
 export function SupportSection() {
@@ -125,6 +125,21 @@ export function SupportSection() {
               <div className="flex shrink-0 flex-wrap gap-2">
                 <Button
                   asChild
+                  className="h-11 bg-gold text-black hover:bg-gold-light"
+                >
+                  <a
+                    href={PROJECT_TIKTOK_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Seguir no TikTok oficial do projeto (${PROJECT_TIKTOK_HANDLE}) — abre em nova aba`}
+                    title={`TikTok oficial do projeto ${PROJECT_TIKTOK_HANDLE}`}
+                  >
+                    <TikTokIcon className="h-4 w-4" aria-hidden="true" />
+                    TikTok do projeto
+                  </a>
+                </Button>
+                <Button
+                  asChild
                   variant="outline"
                   className="h-11 border-[#E4405F]/40 text-[#E4405F] hover:bg-[#E4405F]/10"
                 >
@@ -148,11 +163,11 @@ export function SupportSection() {
                     href={TIKTOK_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={`Seguir no TikTok (${TIKTOK_HANDLE}) — abre em nova aba`}
-                    title={`TikTok ${TIKTOK_HANDLE}`}
+                    aria-label={`Seguir no TikTok do criador (${TIKTOK_HANDLE}) — abre em nova aba`}
+                    title={`TikTok do criador ${TIKTOK_HANDLE}`}
                   >
                     <TikTokIcon className="h-4 w-4" aria-hidden="true" />
-                    TikTok
+                    TikTok do criador
                   </a>
                 </Button>
                 <Button

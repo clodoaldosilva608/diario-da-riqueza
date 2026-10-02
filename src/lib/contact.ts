@@ -111,6 +111,17 @@ export const TIKTOK_URL = 'https://www.tiktok.com/@clodoald_c_silva';
 /** @ no TikTok */
 export const TIKTOK_HANDLE = '@clodoald_c_silva';
 
+/**
+ * TikTok OFICIAL do Diário da Riqueza (perfil dedicado ao projeto,
+ * distinto do TikTok pessoal do criador). URL canônica sem parâmetros
+ * de rastreamento da linktree compartilhada (?_r=1&_t=... são
+ * parâmetros de compartilhamento do TikTok e não são necessários).
+ */
+export const PROJECT_TIKTOK_URL = 'https://www.tiktok.com/@dirio.da.riqueza8';
+
+/** @ no TikTok oficial do projeto */
+export const PROJECT_TIKTOK_HANDLE = '@dirio.da.riqueza8';
+
 export const YOUTUBE_URL = 'https://youtube.com/@clodoaldosilvaa';
 
 /** @ no YouTube */
@@ -134,11 +145,11 @@ export const CREATOR_SECTION_INTRO =
   'e conteúdos, e conheça também os outros apps independentes e gratuitos ' +
   'que estou desenvolvendo.';
 
-/** Texto do pop-up "siga nas redes" (TikTok e Instagram) */
+/** Texto do pop-up "siga nas redes" (TikTok oficial do projeto e Instagram) */
 export const FOLLOW_INTRO =
   'Acompanhe os bastidores do desenvolvimento, dicas de uso do Diário da ' +
-  'Riqueza e novidades sobre os próximos recursos. Seguir no TikTok e no ' +
-  'Instagram é uma forma simples e gratuita de apoiar o projeto.';
+  'Riqueza e novidades sobre os próximos recursos. Seguir o TikTok oficial ' +
+  'do projeto e o Instagram é uma forma simples e gratuita de apoiar o projeto.';
 
 /* ============================== COMPARTILHAR ============================== */
 

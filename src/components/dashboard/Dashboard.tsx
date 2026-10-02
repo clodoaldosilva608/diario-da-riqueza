@@ -29,6 +29,7 @@ import { GoalProgressBar, StatCard, LevelBadge } from '@/components/shared/ui-ki
 import { Heatmap } from '@/components/dashboard/Heatmap';
 import { RegistrarHojeButton } from '@/components/layout/AppShell';
 import { SupportSection } from '@/components/support/SupportSection';
+import { PermanentMessage } from '@/components/support/PermanentMessage';
 import { AnnouncementBanner } from '@/components/announcements/AnnouncementBanner';
 import { countExampleData, clearExampleData } from '@/db/seed';
 
@@ -119,6 +120,9 @@ export function Dashboard({ onOpenEntry }: { onOpenEntry: (date: string) => void
           </Badge>
         </div>
       </div>
+
+      {/* Mensagem permanente: agradecimento + ajuda + apoio + redes */}
+      <PermanentMessage />
 
       {/* Avisos do criador (Portal de Notícias do /admin) */}
       <AnnouncementBanner />

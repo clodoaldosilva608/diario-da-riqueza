@@ -45,8 +45,8 @@ import {
 } from '@/lib/outreach';
 import {
   FOLLOW_INTRO, INSTAGRAM_HANDLE, INSTAGRAM_URL, METHOD_FAQ, PARTNERS_URL,
-  PERSONAL_SITE_URL, SITE_PROMO_INTRO, SUPPORT_NUDGE_INTRO, TIKTOK_HANDLE,
-  TIKTOK_URL,
+  PERSONAL_SITE_URL, PROJECT_TIKTOK_HANDLE, PROJECT_TIKTOK_URL,
+  SITE_PROMO_INTRO, SUPPORT_NUDGE_INTRO, TIKTOK_HANDLE, TIKTOK_URL,
 } from '@/lib/contact';
 
 type StoreState = ReturnType<typeof useAppStore.getState>;
@@ -421,7 +421,7 @@ export function OutreachDialogs() {
         <DialogContent
           className="max-w-[calc(100%-2rem)] gap-3 border-gold/25 p-4 sm:max-w-sm sm:gap-4 sm:p-6"
           role="dialog"
-          aria-label="Convite para seguir o projeto no TikTok e no Instagram"
+          aria-label="Convite para seguir o projeto no TikTok oficial e no Instagram"
         >
           <DialogHeader>
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-gold/40 bg-gold/10">
@@ -436,6 +436,22 @@ export function OutreachDialogs() {
           </DialogHeader>
 
           <DialogFooter className="flex-col gap-2 sm:flex-col sm:justify-center">
+            <Button
+              asChild
+              className="h-11 w-full whitespace-normal bg-gold text-base font-semibold text-black hover:bg-gold-light"
+            >
+              <a
+                href={PROJECT_TIKTOK_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => closePositive()}
+                aria-label={`Seguir no TikTok oficial do projeto (${PROJECT_TIKTOK_HANDLE}) — abre em nova aba`}
+                title={`Abre em nova aba: ${PROJECT_TIKTOK_URL}`}
+              >
+                <TikTokIcon className="h-4 w-4" aria-hidden="true" />
+                Seguir no TikTok do projeto
+              </a>
+            </Button>
             <Button
               asChild
               className="h-11 w-full whitespace-normal bg-[#E4405F] text-base font-semibold text-white hover:bg-[#c9354f]"
@@ -462,11 +478,11 @@ export function OutreachDialogs() {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => closePositive()}
-                aria-label={`Seguir no TikTok (${TIKTOK_HANDLE}) — abre em nova aba`}
+                aria-label={`Seguir no TikTok do criador (${TIKTOK_HANDLE}) — abre em nova aba`}
                 title={`Abre em nova aba: ${TIKTOK_URL}`}
               >
                 <TikTokIcon className="h-4 w-4" aria-hidden="true" />
-                Seguir no TikTok
+                Seguir no TikTok do criador
               </a>
             </Button>
             <Button
