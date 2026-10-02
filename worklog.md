@@ -614,3 +614,19 @@ Work Log:
 Stage Summary:
 - Landing sem nenhum preço visível por padrão; seção de planos só existe no DOM após clicar em "Planos de apoio" (menu superior), que monta e rola automaticamente até ela
 - Aprendizado: nesta SPA, validação de deploy por HTML é inútil (SSR = skeleton) — sempre grepar chunks JS ou usar agent-browser
+
+---
+Task ID: 23
+Agent: Super Z (main agent)
+Task: Toggle abrir/fechar na seção de planos (+ animação de entrada) — escolha de maior valor entre as sugestões
+
+Work Log:
+- LandingPage.tsx: botão do header agora alterna (setPlanosOpen(v => !v)) — "Planos de apoio" (HeartHandshake, texto esmaecido) <-> "Fechar planos" (X, texto pleno); aria-label/title dinâmicos; useRef planosReturnY/planosJaAbriu para guardar a posição ao abrir e restaurá-la ao fechar (useEffect cobre os dois sentidos, ignorando o 1º render)
+- SupportOptions.tsx: classe planos-reveal na section
+- globals.css: keyframes planos-reveal (fade + translateY 16px, 0.45s ease-out) com @media prefers-reduced-motion desligando
+- Qualidade: tsc limpo, eslint 0 erros (aviso só por passar .css ao eslint), 6/6 suítes verdes, build OK
+- Commit a6305bb push main -> Vercel; live na 4ª tentativa (grep "Fechar planos" nos chunks)
+- E2E produção: scrollY inicial 4232 -> abrir (#apoio montada, botão "Fechar planos de apoio") -> fechar (#apoio desmontada, botão "Planos de apoio", scrollY restaurado = 4232 exato); screenshot download/landing_botao_fechar.png
+
+Stage Summary:
+- Seção de planos virou um painel sob demanda completo: abre com animação suave, fecha e devolve o visitante ao ponto exato da página; acessível (aria-expanded/aria-label dinâmicos) e respeita reduced-motion
