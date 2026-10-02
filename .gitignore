@@ -55,3 +55,7 @@ server.log
 # artefatos locais (screenshots e2e, downloads do usuário)
 /download/
 /dev.log
+
+# dados de runtime das features server-side (nunca commitar)
+data/sync-vaults.json
+data/push-subscriptions.json
