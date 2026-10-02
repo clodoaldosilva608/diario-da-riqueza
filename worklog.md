@@ -653,3 +653,27 @@ Stage Summary:
 - Fluxo de usuário real completo validado: landing → onboarding 5 passos → 9 views → entrada de diário persistida (+90 XP + conquista) → meta → lançamento recorrente → busca/foco/ano → tema
 - Painel admin validado ponta a ponta: gate, login errado/certo, 9 páginas, sessão, logout
 - Nenhum bug funcional encontrado; pontos de atenção pré-existentes seguem: rotacionar PAT/Vercel/Cakto e senha admin
+
+---
+Task ID: 24
+Agent: Super Z (main agent)
+Task: Bug reportado pelo usuário — aba Sonhos & Metas, seção Meus sonhos: botão de criar sonho "não faz nada" e não consegue escrever + verificação de todas as funcionalidades
+
+Work Log:
+- Diagnóstico (produção, state injetado no localStorage):
+  1) BUG REAL: handleDreamAdd retornava silenciosamente quando o campo estava vazio/curto (<2 chars) — sem toast, sem foco, sem aria-label no botão "+" (só ícone). Quem clica no botão primeiro (fluxo natural) conclui que "nada acontece"
+  2) AGRAVANTE: pop-up de apoio abre automaticamente 40s após carregar (cadência por design) e cobre a tela com overlay modal — enquanto ele está aberto, taps no input do sonho não chegam (body pointer-events:none). Reproduzido com elementFromPoint: P do SUPPORT_NUDGE_INTRO por cima do input
+  3) Descartado: input NÃO está coberto em desktop com pop-up fechado; criação com texto funciona (IndexedDB OK)
+- Fix 1 (GoalsView.tsx): clicar + com vazio/curto agora foca o input + toast.info explicativo ("Escreva o sonho no campo antes de adicionar."); aria-label no campo ("Novo sonho...") e no botão ("Adicionar sonho") + title; após adicionar, foco volta ao campo (encadear sonhos); useRef no Input (React 19 ref-as-prop via spread — confirmado no ui/input.tsx)
+- Fix 2 (OutreachDialogs.tsx): se document.activeElement é INPUT/TEXTAREA/contentEditable quando o timer de 40s estoura, a exibição é adiada 60s (attempt reagenda a si mesmo com flag cancelled no cleanup) — pop-up não interrompe mais escrita em formulário
+- Varredura proativa de botões icon-only sem label: único caso real era o + de sonho (‹ › do orçamento já têm aria-label; botões nativos de calendário/filtros/detalhe têm conteúdo visível)
+- Qualidade: tsc limpo em src/, eslint limpo nos 2 arquivos, next build OK, 6/6 suítes bun (cakto, contact, founders_wall, obsidian, outreach, seed)
+- Deploy: commit 6cabaa2 → push main → validado por chunk grep (b7b6988d22e38d89.js contém "Escreva o sonho no campo antes de adicionar")
+- E2E pós-deploy em produção: vazio → toast+foco (desktop e mobile 390x844); criação via Enter ✓; via botão ✓; campo limpa ✓; foco encadeia ✓; toggle realizado → badge + conquista "🏆 Sonho Virou Realidade" ✓; excluir → confirmação "Excluir sonho?" → removido + toast ✓; regressão das 9 views (dashboard, diário 3 abas, orçamento, biblioteca, estatísticas, conquistas 2/12, ajuda, configurações) ✓; busca global (3 resultados p/ "juros") ✓; gate admin /admin→/admin/login ✓
+- Nota: dados "diferentes" na 2ª varredura (3 entradas, XP 270, sem Academia) = perfil de navegador novo com seed regenerado — comportamento correto, não bug
+- Screenshots: download/bug-01-popup-aberto.png (evidência do pop-up cobrindo), fix-01-feedback-vazio.png, fix-02-mobile-criado.png
+
+Stage Summary:
+- Causa raiz do "nada acontece" era dupla: falha silenciosa do botão + pop-up automático cobrindo a tela; ambas corrigidas e validadas em produção (desktop + mobile)
+- Regressão completa verde: 9 views + busca + gate admin
+- Deploy 6cabaa2 ao vivo
