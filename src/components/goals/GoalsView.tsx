@@ -6,7 +6,7 @@
  * - Metas: mínimo recomendado de 10, categorizadas, com progresso visual
  */
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
   Target, Plus, Star, Trash2, CheckCircle2, Circle, Sparkles, Pencil,
@@ -44,6 +44,7 @@ export function GoalsView() {
   const selectedYear = useAppStore((s) => s.selectedYear);
 
   const [dreamTitle, setDreamTitle] = useState('');
+  const dreamInputRef = useRef<HTMLInputElement>(null);
   const [goalDialog, setGoalDialog] = useState(false);
   const [editing, setEditing] = useState<Goal | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ kind: 'sonho' | 'meta'; id: number } | null>(null);
@@ -118,11 +119,29 @@ export function GoalsView() {
     setGoalDialog(false);
   }
 
+  /**
+   * Adiciona um sonho à lista livre.
+   *
+   * Regra de UX: o botão (+) NUNCA responde em silêncio — se o campo está
+   * vazio ou curto demais, foca o campo e explica o que falta. Sem isso,
+   * quem clica direto no botão conclui que "nada acontece".
+   */
   async function handleDreamAdd() {
-    if (dreamTitle.trim().length < 2) return;
-    await addDream(dreamTitle.trim());
+    const t = dreamTitle.trim();
+    if (t.length < 2) {
+      dreamInputRef.current?.focus();
+      toast.info(
+        t.length === 0
+          ? 'Escreva o sonho no campo antes de adicionar.'
+          : 'Detalhe um pouco mais — pelo menos 2 caracteres.',
+      );
+      return;
+    }
+    await addDream(t);
     setDreamTitle('');
     toast.success('Sonho adicionado à lista. Escreva, visualise, execute.');
+    // Foco volta ao campo para encadear vários sonhos sem buscar o input de novo
+    dreamInputRef.current?.focus();
   }
 
   return (
@@ -177,12 +196,19 @@ export function GoalsView() {
           </p>
           <div className="mt-4 flex gap-2">
             <Input
+              ref={dreamInputRef}
               placeholder="Ex.: Casa própria para a família"
+              aria-label="Novo sonho — escreva e toque no + ou pressione Enter"
               value={dreamTitle}
               onChange={(e) => setDreamTitle(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleDreamAdd()}
             />
-            <Button variant="secondary" onClick={handleDreamAdd}>
+            <Button
+              variant="secondary"
+              aria-label="Adicionar sonho"
+              title="Adicionar sonho"
+              onClick={handleDreamAdd}
+            >
               <Plus className="h-4 w-4" />
             </Button>
           </div>

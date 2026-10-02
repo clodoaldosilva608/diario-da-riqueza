@@ -128,10 +128,23 @@ export function OutreachDialogs() {
     chainTimerRef.current = setTimeout(() => setOpenKind(next), OUTREACH_CHAIN_DELAY_MS);
   }
 
-  // Timer principal: primeira checagem 40s após o gate liberar
+  // Timer principal: primeira checagem 40s após o gate liberar.
+  // Refinamento: se o usuário está escrevendo em um campo (input/textarea),
+  // a exibição é ADIADA (60s) em vez de interromper a escrita — cobre o
+  // caso real de quem preenche um formulário quando o timer estoura.
   useEffect(() => {
     if (!hydrated || !onboarded || busyOverlay) return;
-    const t = setTimeout(() => {
+    let cancelled = false;
+    const timer = setTimeout(function attempt() {
+      if (cancelled) return;
+      const el = document.activeElement;
+      const typing =
+        el instanceof HTMLElement &&
+        (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+      if (typing) {
+        setTimeout(attempt, 60_000);
+        return;
+      }
       const s = useAppStore.getState();
       const next = nextPopupDue(Date.now(), lastByKind(s), gateFrom(s), [...shownRef.current]);
       if (next) {
@@ -140,7 +153,10 @@ export function OutreachDialogs() {
         setOpenKind(next);
       }
     }, OUTREACH_FIRST_DELAY_MS);
-    return () => clearTimeout(t);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [hydrated, onboarded, busyOverlay]);
 
   // Limpa timer encadeado ao desmontar
