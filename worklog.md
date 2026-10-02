@@ -577,3 +577,22 @@ Work Log:
 Stage Summary:
 - Mural dos Fundadores agora abre recolhido (8 nomes + Ouro) com botão dourado "Ver todos os 75 nomes" que expande/recolhe a lista completa
 - Aprendizado: sem token Vercel no ambiente, validar deploy conferindo strings exclusivas do commit nos chunks de produção + E2E agent-browser encadeado em um único comando
+
+---
+Task ID: 21
+Agent: Super Z (main agent)
+Task: Privacidade no modal Pix (ocultar telefone) + preços fora da dobra inicial (seção dedicada)
+
+Work Log:
+- PixSupportDialog.tsx: removida a exibição de PIX_KEY_DISPLAY; bloco agora mostra "Chave Pix — telefone" + aviso "Por privacidade, o número não é exibido aqui" + botão Copiar chave Pix (PIX_KEY_NORMALizado segue no fluxo de cópia); hint de erro ajustado; import PIX_KEY_DISPLAY removido
+- FounderWall.tsx: removido "(R$ 9,90/mês)" da descrição do mural (foco no benefício; CTA segue para o checkout sem preço)
+- LandingPage.tsx: <SupportOptions /> movido para DEPOIS de <FounderWall /> — preços agora só na seção dedicada #apoio no fim da página (também corrige alternância muted/muted entre criador e apoio)
+- Valores do modal Pix mantidos: contexto de pagamento explícito (usuário já clicou em apoiar)
+- Qualidade: tsc limpo em src/, eslint ok, build OK, 346/346 checks
+- Commit 63a4cdf push main -> Vercel; live confirmado via chunk (string "não é exibido aqui")
+- E2E produção: mural sem R$ (false), ordem mural(4312) < apoio(5391), hero/como-funciona sem R$, #apoio com R$ 5 e 9,90, modal SEM "9711333707", botão "Copiar chave Pix" presente, aviso "Por privacidade" presente; screenshots download/landing_pix_chave_oculta.png e landing_secao_planos.png
+
+Stage Summary:
+- Modal Pix: número do telefone não aparece mais — só tipo da chave, recebedor, QR Code e botões de copiar
+- Preços consolidados: única seção com valores é "Apoie o projeto" (#apoio), agora no fim da landing após o mural; dobra inicial 100% focada em gratuito
+- Aprendizado: find text do agent-browser pode falhar em <button> com ícone+texto — usar eval com seletor de aria-label
