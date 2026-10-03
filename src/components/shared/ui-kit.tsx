@@ -5,6 +5,7 @@
  * badge de XP/nível e overlay de celebração.
  */
 
+import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Trophy, TrendingUp, Wallet } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -138,10 +139,23 @@ export function XPCelebration({
   celebration: { xp: number; message: string } | null;
   onDone: () => void;
 }) {
+  // ESC também encerra — teclado e leitores de tela precisam de saída nativa;
+  // role=dialog torna o overlay visível p/ o anyFlowDialogOpen() (posterga pop-ups).
+  useEffect(() => {
+    if (!celebration) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onDone();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [celebration, onDone]);
   return (
     <AnimatePresence>
       {celebration && (
         <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`+${celebration.xp} XP — ${celebration.message}`}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

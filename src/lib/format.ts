@@ -47,6 +47,22 @@ export function parseBRLNumber(raw: string | number | null | undefined): number 
   return negative ? -n : n;
 }
 
+/**
+ * Número → texto editável pt-BR para inputs de valor (MoneyInput).
+ * 100000.5 → "100.000,50" • 20000 → "20.000,00" • -77.5 → "-77,50".
+ * Complemento de parseBRLNumber: carregar dados salvos de volta no input
+ * sem exibir "100000.5" (formato en-US cru) para o usuário BR.
+ * SEMPRE com centavos: "20.000" (só milhar) voltaria a parsear como 20
+ * (ponto isolado = decimal) — corrompendo o valor num editar→salvar.
+ */
+export function numberToBR(n: number | null | undefined): string {
+  if (n == null || !Number.isFinite(n)) return '';
+  return new Intl.NumberFormat('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(n);
+}
+
 export function formatCompactBRL(value: number): string {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',

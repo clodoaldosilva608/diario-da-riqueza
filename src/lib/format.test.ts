@@ -1,7 +1,7 @@
 /// <reference types="bun-types" />
 import { describe, expect, test } from 'bun:test';
 
-import { parseBRLNumber } from './format';
+import { numberToBR, parseBRLNumber } from './format';
 
 /* ============================ parseBRLNumber ============================ */
 
@@ -40,5 +40,35 @@ describe('parseBRLNumber', () => {
     expect(parseBRLNumber(42)).toBe(42);
     expect(parseBRLNumber('  77 , 50  ')).toBe(77.5);
     expect(parseBRLNumber('abc12,3def')).toBe(12.3);
+  });
+});
+
+/* ============================= numberToBR ============================= */
+
+describe('numberToBR', () => {
+  test('número cru → texto editável pt-BR (regressão do E2E: perfil mostrava "100000.5")', () => {
+    expect(numberToBR(100000.5)).toBe('100.000,50');
+    expect(numberToBR(432.1)).toBe('432,10');
+    expect(numberToBR(77.5)).toBe('77,50');
+  });
+
+  test('sempre com centavos — evita ambiguidade do ponto-isolado no round-trip', () => {
+    expect(numberToBR(20000)).toBe('20.000,00');
+    expect(numberToBR(150)).toBe('150,00');
+    expect(numberToBR(0)).toBe('0,00');
+  });
+
+  test('negativos, nulos e inválidos', () => {
+    expect(numberToBR(-77.5)).toBe('-77,50');
+    expect(numberToBR(null)).toBe('');
+    expect(numberToBR(undefined)).toBe('');
+    expect(numberToBR(NaN)).toBe('');
+    expect(numberToBR(Infinity)).toBe('');
+  });
+
+  test('round-trip com parseBRLNumber (load → save preserva o valor)', () => {
+    for (const v of [100000.5, 432.1, 20000, 0, -77.5, 1234567.89]) {
+      expect(parseBRLNumber(numberToBR(v))).toBe(v);
+    }
   });
 });

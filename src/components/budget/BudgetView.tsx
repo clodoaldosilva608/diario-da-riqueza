@@ -34,7 +34,7 @@ import { useBudget, useProfile } from '@/hooks/useData';
 import { addBudgetEntry, updateBudgetEntry, deleteBudgetEntry } from '@/db/actions';
 import { ImportDialog } from './ImportDialog';
 import { useAppStore } from '@/stores/useAppStore';
-import { formatBRL, formatCompactBRL, monthlyTotals, MONTH_NAMES, daysUntil, parseBRLNumber } from '@/lib/format';
+import { formatBRL, formatCompactBRL, monthlyTotals, MONTH_NAMES, daysUntil, numberToBR, parseBRLNumber } from '@/lib/format';
 import type { BudgetEntry, BudgetType } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -177,7 +177,7 @@ export function BudgetView() {
     setType(b.type);
     setCategory(b.category);
     setDescription(b.description);
-    setValue(String(b.value));
+    setValue(numberToBR(b.value));
     setDate(b.date);
     setMensal(b.frequency === 'mensal');
     setDialogOpen(true);

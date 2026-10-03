@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/select';
 import { parseStatement, suggestCategory, type ParsedTx } from '@/lib/import';
 import { importBudgetEntries } from '@/db/actions';
-import { formatBRL, parseBRLNumber } from '@/lib/format';
+import { formatBRL, numberToBR, parseBRLNumber } from '@/lib/format';
 import type { BudgetEntry } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -289,7 +289,7 @@ export function ImportDialog({
                     <MoneyInput
                       className="h-7 w-28 px-2 text-right text-xs tabular-nums"
                       placeholder="0,00"
-                      value={r.value ? String(r.value) : ''}
+                      value={r.value ? numberToBR(r.value) : ''}
                       onValueChange={(raw) => patchRow(i, { value: parseBRLNumber(raw) || 0 })}
                       aria-label="Valor"
                     />

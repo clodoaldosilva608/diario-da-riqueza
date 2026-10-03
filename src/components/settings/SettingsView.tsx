@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { parseBRLNumber } from '@/lib/format';
+import { numberToBR, parseBRLNumber } from '@/lib/format';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
   Settings, User, HardDrive, CloudDownload, FolderPlus, Save, BellRing,
@@ -92,7 +92,7 @@ export function SettingsView() {
     if (profile) {
       setName(profile.name);
       setJournalName(profile.journalName);
-      setYearGoal(String(profile.yearGoal));
+      setYearGoal(numberToBR(profile.yearGoal));
       setTargetDate(profile.targetDate);
     }
   }, [profile]);

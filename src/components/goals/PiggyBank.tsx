@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/dialog';
 import { useDreamDeposits } from '@/hooks/useData';
 import { addDreamDeposit, deleteDreamDeposit, setDreamTarget } from '@/db/actions';
-import { formatBRL, parseBRLNumber } from '@/lib/format';
+import { formatBRL, numberToBR, parseBRLNumber } from '@/lib/format';
 import { todayISO } from '@/db';
 import type { Dream } from '@/types';
 import { cn } from '@/lib/utils';
@@ -96,7 +96,7 @@ export function PiggyBankSection({ dream }: { dream: Dream }) {
         <button
           className="flex items-center gap-1.5 text-xs font-semibold text-gold transition-colors hover:text-gold-light"
           onClick={() => {
-            setTargetInput(dream.targetValue ? String(dream.targetValue) : '');
+            setTargetInput(dream.targetValue ? numberToBR(dream.targetValue) : '');
             setEditingTarget(true);
           }}
           aria-label={`Definir meta de poupança do sonho ${dream.title}`}

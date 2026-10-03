@@ -36,7 +36,7 @@ import { useAppStore } from '@/stores/useAppStore';
 import { GOAL_CATEGORY_LABELS } from '@/types';
 import type { Goal, GoalCategory } from '@/types';
 import { cn } from '@/lib/utils';
-import { parseBRLNumber } from '@/lib/format';
+import { numberToBR, parseBRLNumber } from '@/lib/format';
 import { MoneyInput } from '@/components/ui/money-input';
 
 const CATEGORIES = Object.entries(GOAL_CATEGORY_LABELS) as Array<[GoalCategory, string]>;
@@ -90,8 +90,8 @@ export function GoalsView() {
     setCategory(g.category);
     setTitle(g.title);
     setDescription(g.description ?? '');
-    setTargetValue(g.targetValue ? String(g.targetValue) : '');
-    setCurrentValue(String(g.currentValue ?? ''));
+    setTargetValue(g.targetValue ? numberToBR(g.targetValue) : '');
+    setCurrentValue(numberToBR(g.currentValue ?? 0));
     setDeadline(g.deadline ?? '');
     setGoalDialog(true);
   }
