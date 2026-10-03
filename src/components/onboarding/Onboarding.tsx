@@ -15,8 +15,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { MoneyInput } from '@/components/ui/money-input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { parseBRLNumber } from '@/lib/format';
 import { initializeDatabase } from '@/db';
 import { seedExampleData } from '@/db/seed';
 import { connectRootFolder, isFSAvailable } from '@/filesystem';
@@ -43,7 +45,7 @@ export function Onboarding() {
   const canNext =
     (step === 0) ||
     (step === 1 && name.trim().length >= 2 && journalName.trim().length >= 2) ||
-    (step === 2 && parseFloat(goal) > 0 && targetDate.length === 10) ||
+    (step === 2 && parseBRLNumber(goal) > 0 && targetDate.length === 10) ||
     step === 3 ||
     step === 4;
 
@@ -66,7 +68,7 @@ export function Onboarding() {
       await initializeDatabase({
         name: name.trim(),
         journalName: journalName.trim(),
-        yearGoal: parseFloat(goal),
+        yearGoal: parseBRLNumber(goal),
         targetDate,
       });
       // Semear dados de exemplo: o usuário nunca abre o app vazio —
@@ -199,14 +201,11 @@ export function Onboarding() {
                     <Label htmlFor="ob-goal" className="flex items-center gap-2">
                       <Wallet className="h-4 w-4 text-gold" /> Meta financeira (R$)
                     </Label>
-                    <Input
+                    <MoneyInput
                       id="ob-goal"
-                      type="number"
-                      min="0"
-                      step="1000"
                       placeholder="Ex.: 100000"
                       value={goal}
-                      onChange={(e) => setGoal(e.target.value)}
+                      onValueChange={setGoal}
                     />
                   </div>
                   <div className="space-y-2">

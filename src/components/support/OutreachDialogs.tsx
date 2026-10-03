@@ -96,6 +96,22 @@ export function OutreachDialogs() {
 
   const busyOverlay = tourOpen || landingOpen || searchOpen;
 
+  /**
+   * Há algum modal de fluxo (Radix Dialog/AlertDialog) aberto agora?
+   *
+   * Guarda anti-interceptação: pop-ups de outreach NÃO podem abrir por
+   * cima de um dialog do usuário (ex.: cofrinho, importação) — achado de
+   * E2E real: o pop-up "Compartilhe" roubou o clique do cofrinho e o
+   * usuário viu o modal errado. Se ocupado, a tentativa é ADIADA.
+   */
+  function anyFlowDialogOpen(): boolean {
+    if (typeof document === 'undefined') return false;
+    return Boolean(
+      document.querySelector('[role="dialog"]') ||
+        document.querySelector('[role="alertdialog"]'),
+    );
+  }
+
   function markShown(kind: OutreachKind, at: number) {
     shownRef.current.add(kind);
     const s = useAppStore.getState();
@@ -125,7 +141,14 @@ export function OutreachDialogs() {
     if (!next) return;
     chainCountRef.current += 1;
     markShown(next, Date.now());
-    chainTimerRef.current = setTimeout(() => setOpenKind(next), OUTREACH_CHAIN_DELAY_MS);
+    chainTimerRef.current = setTimeout(() => {
+      // Mesma guarda da cadeia: dialog aberto → posterga 60s, não interrompe
+      if (anyFlowDialogOpen()) {
+        chainTimerRef.current = setTimeout(() => setOpenKind(next), 60_000);
+        return;
+      }
+      setOpenKind(next);
+    }, OUTREACH_CHAIN_DELAY_MS);
   }
 
   // Timer principal: primeira checagem 40s após o gate liberar.
@@ -141,7 +164,7 @@ export function OutreachDialogs() {
       const typing =
         el instanceof HTMLElement &&
         (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
-      if (typing) {
+      if (typing || anyFlowDialogOpen()) {
         setTimeout(attempt, 60_000);
         return;
       }

@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { MoneyInput } from '@/components/ui/money-input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -26,7 +27,7 @@ import {
 } from '@/components/ui/select';
 import { parseStatement, suggestCategory, type ParsedTx } from '@/lib/import';
 import { importBudgetEntries } from '@/db/actions';
-import { formatBRL } from '@/lib/format';
+import { formatBRL, parseBRLNumber } from '@/lib/format';
 import type { BudgetEntry } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -285,13 +286,11 @@ export function ImportDialog({
                         ))}
                       </SelectContent>
                     </Select>
-                    <Input
+                    <MoneyInput
                       className="h-7 w-28 px-2 text-right text-xs tabular-nums"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={r.value}
-                      onChange={(e) => patchRow(i, { value: parseFloat(e.target.value) || 0 })}
+                      placeholder="0,00"
+                      value={r.value ? String(r.value) : ''}
+                      onValueChange={(raw) => patchRow(i, { value: parseBRLNumber(raw) || 0 })}
                       aria-label="Valor"
                     />
                     {r.duplicate && (

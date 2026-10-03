@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { parseBRLNumber } from '@/lib/format';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
   Settings, User, HardDrive, CloudDownload, FolderPlus, Save, BellRing,
@@ -16,6 +17,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { MoneyInput } from '@/components/ui/money-input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
@@ -106,7 +108,7 @@ export function SettingsView() {
     await updateProfile({
       name: name.trim(),
       journalName: journalName.trim(),
-      yearGoal: parseFloat(yearGoal) || 0,
+      yearGoal: parseBRLNumber(yearGoal) || 0,
       targetDate,
     });
     toast.success('Perfil atualizado.');
@@ -182,7 +184,7 @@ export function SettingsView() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="st-goal">Meta financeira (R$)</Label>
-            <Input id="st-goal" type="number" min="0" value={yearGoal} onChange={(e) => setYearGoal(e.target.value)} />
+            <MoneyInput id="st-goal" placeholder="Ex.: 100.000" value={yearGoal} onValueChange={setYearGoal} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="st-date">Data-alvo</Label>

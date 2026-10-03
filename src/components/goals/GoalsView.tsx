@@ -36,6 +36,8 @@ import { useAppStore } from '@/stores/useAppStore';
 import { GOAL_CATEGORY_LABELS } from '@/types';
 import type { Goal, GoalCategory } from '@/types';
 import { cn } from '@/lib/utils';
+import { parseBRLNumber } from '@/lib/format';
+import { MoneyInput } from '@/components/ui/money-input';
 
 const CATEGORIES = Object.entries(GOAL_CATEGORY_LABELS) as Array<[GoalCategory, string]>;
 
@@ -103,8 +105,8 @@ export function GoalsView() {
       category,
       title: title.trim(),
       description: description.trim() || undefined,
-      targetValue: targetValue ? parseFloat(targetValue) : undefined,
-      currentValue: currentValue ? parseFloat(currentValue) : 0,
+      targetValue: targetValue ? parseBRLNumber(targetValue) : undefined,
+      currentValue: currentValue ? parseBRLNumber(currentValue) : 0,
       deadline: deadline || undefined,
     };
     if (editing?.id) {
@@ -418,24 +420,20 @@ export function GoalsView() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="goal-target">Valor-alvo</Label>
-                <Input
+                <MoneyInput
                   id="goal-target"
-                  type="number"
-                  min="0"
                   placeholder="Ex.: 12000"
                   value={targetValue}
-                  onChange={(e) => setTargetValue(e.target.value)}
+                  onValueChange={setTargetValue}
                 />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="goal-current">Já conquistei</Label>
-                <Input
+                <MoneyInput
                   id="goal-current"
-                  type="number"
-                  min="0"
                   placeholder="0"
                   value={currentValue}
-                  onChange={(e) => setCurrentValue(e.target.value)}
+                  onValueChange={setCurrentValue}
                 />
               </div>
             </div>

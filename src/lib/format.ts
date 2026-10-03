@@ -11,6 +11,42 @@ export function formatBRL(value: number): string {
   }).format(value || 0);
 }
 
+/**
+ * Converte texto digitado por usuários BR em número.
+ *
+ * Aceita: "77,50" • "1.234,56" • "R$ 1.234,56" • "77.5" • "1,234.56" •
+ * "(1.234,56)" (contábil negativo) • "-77,50". Regra do último separador:
+ * quando há "." e ",", o ÚLTIMO é o decimal (padrão BR vs en-US).
+ *
+ * Retorna NaN para vazio/inválido — callers decidem o fallback (|| 0 etc.).
+ * Motivação: <input type="number"> saneia vírgula para "" no React,
+ * apagando silenciosamente o que o usuário digitou (bug real de E2E).
+ */
+export function parseBRLNumber(raw: string | number | null | undefined): number {
+  if (typeof raw === 'number') return raw;
+  if (raw == null) return NaN;
+  let s = String(raw).trim().replace(/[R$\s\u00A0]/g, '');
+  if (!s) return NaN;
+  const negative = s.startsWith('-') || (/^\(.*\)$/.test(s));
+  s = s.replace(/[()\-\+]/g, '');
+  // Extrai a 1ª sequência numérica (tolera ruído: "abc12,3def" → "12,3")
+  const m = s.match(/[\d.,]+/);
+  if (!m) return NaN;
+  s = m[0];
+  const hasComma = s.includes(',');
+  const hasDot = s.includes('.');
+  if (hasComma && hasDot) {
+    s = s.lastIndexOf(',') > s.lastIndexOf('.')
+      ? s.replace(/\./g, '').replace(',', '.') // 1.234,56 (BR)
+      : s.replace(/,/g, ''); // 1,234.56 (en)
+  } else if (hasComma) {
+    s = s.replace(/,/g, '.'); // 77,50 → 77.50
+  }
+  const n = parseFloat(s);
+  if (!Number.isFinite(n)) return NaN;
+  return negative ? -n : n;
+}
+
 export function formatCompactBRL(value: number): string {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',

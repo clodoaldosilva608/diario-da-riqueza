@@ -28,6 +28,8 @@ import {
 } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { parseBRLNumber } from '@/lib/format';
+import { MoneyInput } from '@/components/ui/money-input';
 import { saveEntry, addAttachment, deleteAttachment } from '@/db/actions';
 import { db, todayISO } from '@/db';
 import { useAttachments, useEntryByDate, useTemplates } from '@/hooks/useData';
@@ -131,8 +133,8 @@ export function DiaryEntryForm({ open, onOpenChange, date, onSaved }: DiaryEntry
     const parsed = entrySchema.safeParse({
       date: formDate,
       practice,
-      income: income || 0,
-      expense: expense || 0,
+      income: parseBRLNumber(income) || 0,
+      expense: parseBRLNumber(expense) || 0,
       energy,
     });
     if (!parsed.success) {
@@ -329,28 +331,22 @@ export function DiaryEntryForm({ open, onOpenChange, date, onSaved }: DiaryEntry
                 <Label htmlFor="de-income" className="flex items-center gap-1.5">
                   <Coins className="h-3.5 w-3.5 text-emerald-wealth" /> Receita do dia (R$)
                 </Label>
-                <Input
+                <MoneyInput
                   id="de-income"
-                  type="number"
-                  min="0"
-                  step="0.01"
                   placeholder="0,00"
                   value={income}
-                  onChange={(e) => setIncome(e.target.value)}
+                  onValueChange={setIncome}
                 />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="de-expense" className="flex items-center gap-1.5">
                   <Coins className="h-3.5 w-3.5 text-loss" /> Despesa do dia (R$)
                 </Label>
-                <Input
+                <MoneyInput
                   id="de-expense"
-                  type="number"
-                  min="0"
-                  step="0.01"
                   placeholder="0,00"
                   value={expense}
-                  onChange={(e) => setExpense(e.target.value)}
+                  onValueChange={setExpense}
                 />
               </div>
             </div>

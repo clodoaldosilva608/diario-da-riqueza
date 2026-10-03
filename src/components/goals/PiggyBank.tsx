@@ -26,10 +26,11 @@ import {
 } from '@/components/ui/dialog';
 import { useDreamDeposits } from '@/hooks/useData';
 import { addDreamDeposit, deleteDreamDeposit, setDreamTarget } from '@/db/actions';
-import { formatBRL } from '@/lib/format';
+import { formatBRL, parseBRLNumber } from '@/lib/format';
 import { todayISO } from '@/db';
 import type { Dream } from '@/types';
 import { cn } from '@/lib/utils';
+import { MoneyInput } from '@/components/ui/money-input';
 
 export function PiggyBankSection({ dream }: { dream: Dream }) {
   const allDeposits = useDreamDeposits();
@@ -50,7 +51,7 @@ export function PiggyBankSection({ dream }: { dream: Dream }) {
   const remaining = hasTarget ? Math.max(0, (dream.targetValue ?? 0) - saved) : 0;
 
   async function handleDeposit() {
-    const v = parseFloat(amount);
+    const v = parseBRLNumber(amount);
     if (!dream.id || !(v > 0)) {
       toast.error('Informe um valor maior que zero.');
       return;
@@ -82,7 +83,7 @@ export function PiggyBankSection({ dream }: { dream: Dream }) {
 
   async function handleSaveTarget() {
     if (!dream.id) return;
-    const v = parseFloat(targetInput);
+    const v = parseBRLNumber(targetInput);
     await setDreamTarget(dream.id, v > 0 ? v : undefined);
     toast.success(v > 0 ? `Meta do cofrinho: ${formatBRL(v)}` : 'Meta do cofrinho removida.');
     setEditingTarget(false);
@@ -181,14 +182,11 @@ export function PiggyBankSection({ dream }: { dream: Dream }) {
           <div className="space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="deposit-value">Valor guardado (R$)</Label>
-              <Input
+              <MoneyInput
                 id="deposit-value"
-                type="number"
-                min="0"
-                step="0.01"
                 placeholder="Ex.: 150,00"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onValueChange={setAmount}
                 autoFocus
               />
             </div>
@@ -233,7 +231,7 @@ export function PiggyBankSection({ dream }: { dream: Dream }) {
               ) : (
                 <PiggyBank className="mr-1.5 h-4 w-4" />
               )}
-              Guardar {amount && parseFloat(amount) > 0 ? formatBRL(parseFloat(amount)) : ''}
+              Guardar {amount && parseBRLNumber(amount) > 0 ? formatBRL(parseBRLNumber(amount)) : ''}
             </Button>
           </div>
         </DialogContent>
@@ -249,13 +247,10 @@ export function PiggyBankSection({ dream }: { dream: Dream }) {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
+            <MoneyInput
               placeholder="Ex.: 5000"
               value={targetInput}
-              onChange={(e) => setTargetInput(e.target.value)}
+              onValueChange={setTargetInput}
               aria-label="Valor-alvo do cofrinho"
             />
             <div className="flex gap-2">

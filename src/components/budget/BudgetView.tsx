@@ -18,6 +18,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { MoneyInput } from '@/components/ui/money-input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -33,7 +34,7 @@ import { useBudget, useProfile } from '@/hooks/useData';
 import { addBudgetEntry, updateBudgetEntry, deleteBudgetEntry } from '@/db/actions';
 import { ImportDialog } from './ImportDialog';
 import { useAppStore } from '@/stores/useAppStore';
-import { formatBRL, formatCompactBRL, monthlyTotals, MONTH_NAMES, daysUntil } from '@/lib/format';
+import { formatBRL, formatCompactBRL, monthlyTotals, MONTH_NAMES, daysUntil, parseBRLNumber } from '@/lib/format';
 import type { BudgetEntry, BudgetType } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -183,7 +184,7 @@ export function BudgetView() {
   }
 
   async function handleSave() {
-    const v = parseFloat(value);
+    const v = parseBRLNumber(value);
     if (!description.trim() || !date || !(v > 0)) {
       toast.error('Preencha descrição, data e valor maior que zero.');
       return;
@@ -535,14 +536,11 @@ export function BudgetView() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="b-value">Valor (R$)</Label>
-                <Input
+                <MoneyInput
                   id="b-value"
-                  type="number"
-                  min="0"
-                  step="0.01"
                   placeholder="0,00"
                   value={value}
-                  onChange={(e) => setValue(e.target.value)}
+                  onValueChange={setValue}
                 />
               </div>
               <div className="space-y-1.5">
