@@ -833,3 +833,26 @@ Stage Summary:
 - Produção (06c9683 READY): status {configured:true, persistence:'blob'}; publicKey de produção CONFERE com VAPID local (BIERaJ6F…); subscribe → total:1 e cron autenticado (Bearer) leu a inscrição de OUTRA instância via Blob → {ok:true, sent:0, total:1} — persistência cross-instance PROVADA; inscrição de teste removida via /api/push/unsubscribe; swipe da borda abriu o drawer em produção (9 itens)
 - RECEITA CRÍTICA p/ recuperar .env.local após reset do ambiente: decrypt=true na LISTA de envs retorna CIFRADO (eyJ…); o decrypt REAL funciona apenas por ID: GET /v9/projects/{proj}/env/{envId}?decrypt=true (o envId vem da lista; lookup por KEY retorna not_found p/ envs gerenciadas por conexão como BLOB_READ_WRITE_TOKEN)
 - Vercel Cron das 20h BRT segue funcionando: a plataforma envia o header com a env real (o 401 visto durante o teste foi só o .env.local cifrado local)
+---
+Task ID: 32
+Agent: Super Z (main agent)
+Task: Teste completo de uso real em produção (metodologia Task 29) — 9 views + swipe/drawer + push/sync via Blob + correções
+
+Work Log:
+- E2E na PRODUÇÃO (agent-browser, 375×667, perfil novo): landing íntegra → onboarding 5 passos (nome, meta "100000,50" preservada com vírgula, data via input nativo, temas) → tour guiado 10 passos (drawer auto-abre/fecha por estado derivado) → dashboard
+- Varredura das 9 views clicando TODOS os botões: Início (Registrar Hoje navega ao Diário; desafios Resgatar→"Resgatado" x2; banner avisos; demo data), Diário (registro completo +90 XP com 77,50/1.234,56 → +R$ 77,50/−R$ 1.234,56; Calendário com valores por dia; Templates criar+aplicar), Sonhos & Metas (Nova meta via BOTÃO ok — Task 24 segue resolvida; Enter funciona no input de SONHO (lista livre), não no form de meta; cofrinho Guardar 250,40 → "R$ 250,40 guardados"; Concluir +25 XP → 33%), Orçamento (lançamento 432,10; Gráficos 7 SVGs; Projeção até a meta; Importar CSV 5 linhas com categorização auto — totais conferidos), Biblioteca (20 temas; status via Select Radix; filtro por área ToggleGroup), Estatísticas (8 gráficos; PDF baixado), Conquistas (2/12; Resgatar x2; selo canvas 540×675, XP 435 bate com a matemática), Ajuda (FAQ abre; "Ver metas de exemplo" navega), Configurações (backup agora listado; 5 exportações salvas; cofre de sync)
+- ITEM 3 provado em uso real: cofre DR-4SWH-4BF8-U6RU criado + senha + "Dados criptografados enviados" → GET /api/sync de FORA (curl) → found:true com blob cifrado 98KB (cross-instance); push: subscribe API → total:1 → cron com Bearer leu de outra instância → {ok:true,total:1}; sem Bearer 401; browser headless auto-nega permissão → app responde fail-closed honesto (toast correto)
+- ITEM 2 provado em produção: swipe da borda (TouchEvent) ABRIU o drawer (9 itens); drag-to-close com mouse confiável FECHOU (vaul follow); swipe vertical NÃO abre; guarda de botões confirmada no código (closest('button,a,[role=button]'))
+- ACHADO 1 (bug BR real): Configurações/Perfil exibia meta "100000.5" — String(numero) cru no MoneyInput; varredura achou 6 pontos iguais (perfil, editar lançamento, cofrinho meta, editar meta alvo/atual, preview importador)
+- ACHADO 2 (round-trip perigoso): numberToBR inicial "20.000" (só milhar) voltaria a parsear como 20 — corromperia valores num editar→salvar; corrigido para SEMPRE centavos ("20.000,00")
+- ACHADO 3 (a11y): XPCelebration era overlay sem role=dialog — invisível p/ leitores de tela e p/ o próprio anyFlowDialogOpen(); ficou PRESO na tela durante o E2E até toque (por design), mas sem saída de teclado
+- CORREÇÕES (commit f9e2d72): numberToBR() em format.ts (sempre 2 decimais) aplicado nas 6 telas; XPCelebration com role=dialog + aria-modal + aria-label dinâmico + ESC fecha; 4 testes novos — suíte 37/37, tsc limpo (src), eslint limpo, build OK
+- Revalidação E2E local (next start): Meta "100.000,50" ✓; editar lançamento "1.800,00" ✓; celebração role=dialog com label "+90 XP — …" ✓; ESC fecha ✓; 0 erros de console
+- Deploy: push origin main → f9e2d72 ao vivo (confirmado no bundle: aria-modal + keydown handler da celebração); produção: Meta "100.000,50" ✓, 0 erros console, push blob ativo
+- Limpeza: inscrição de teste removida via /api/push/unsubscribe; cofre de teste apagado do Blob via scripts/blob-cleanup.mjs (0 blobs restantes); token Vercel não existe mais no ambiente (deploy verificado pelo bundle — API 401)
+
+Stage Summary:
+- App aprovado em teste completo de uso real: nenhuma função morta nas 9 views; dinheiro BR íntegro de ponta a ponta
+- 3 achados viraram 1 commit de correção (f9e2d72) já em produção
+- Persistência server-side (Blob) provada de novo em uso real (cofre + push cross-instance)
+- Pendências do usuário: revogar/renovar tokens expostos no chat (ghp_/vcp_); testar swipe+drawer num celular real com touch nativo
