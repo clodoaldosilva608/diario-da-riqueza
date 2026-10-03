@@ -758,6 +758,9 @@ Work Log:
 - Redeploy disparado via git push main → deploy Vercel automático já com as env novas no runtime
 - Verificação pós-deploy: GET /api/push/status em produção (configured/publicKey/persistence)
 - KV (opcional): conta sem stores existentes; conexão Upstash exige fluxo interativo no dashboard (Vercel → Storage → Create KV) — documentado como pendência para persistência permanente
+- ACHADO CRÍTICO: /api/push/cron exige Authorization: Bearer $CRON_SECRET, mas CRON_SECRET não existia na Vercel — o Vercel Cron chamaria sem header e tomaria 401 (lembrete diário morto). CRON_SECRET gerada (openssl rand -hex 32) e criada nas env (encrypted, 3 targets) + cópia no .env.local
+- Segundo redeploy disparado (push main) para o runtime carregar CRON_SECRET; verificação do cron com Bearer correto → {ok:true,sent:0,total:0}
+- Rotas conferidas em produção: /api/push/subscribe 400 em corpo inválido, /api/admin/push/send 401 sem sessão (fail-closed correto)
 
 Stage Summary:
 - Push real ATIVO em produção: configured=true com chaves VAPID próprias (geradas nesta sessão)
