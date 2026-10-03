@@ -1,9 +1,9 @@
 import 'server-only';
 
 /**
- * STORE de inscrições push — 3 camadas com degradação honesta:
- * 1. KV REST (Upstash/Vercel KV) quando as env vars existem → persistência
- *    REAL na Vercel (recomendado para produção);
+ * STORE de inscrições push — 4 camadas com degradação honesta:
+ * 1. remoto (KV Upstash OU Vercel Blob — ver src/lib/remote-store.ts) →
+ *    persistência REAL na Vercel (recomendado para produção);
  * 2. arquivo data/push-subscriptions.json (preview/self-host);
  * 3. memória da instância (última linha, com aviso no painel).
  *
@@ -13,7 +13,7 @@ import 'server-only';
 
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import path from 'path';
-import { kvGet, kvSet, isKVConfigured } from './kv';
+import { remoteGet, remoteSet, remoteMode } from './remote-store';
 import type { PushSubscriptionLike } from './push';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -29,8 +29,10 @@ let memoryList: StoredSub[] = [];
 let memoryOnly = false;
 
 /** Onde as inscrições estão sendo gravadas agora (diagnóstico p/ admin) */
-export function pushPersistenceMode(): 'kv' | 'arquivo' | 'memoria' {
-  if (isKVConfigured()) return 'kv';
+export function pushPersistenceMode(): 'kv' | 'blob' | 'arquivo' | 'memoria' {
+  const remote = remoteMode();
+  // memoryOnly = última escrita remota E de arquivo falharam → dizer a verdade
+  if (remote !== 'nenhum' && !memoryOnly) return remote;
   return memoryOnly ? 'memoria' : 'arquivo';
 }
 
@@ -51,16 +53,16 @@ function coerce(raw: unknown): StoredSub | null {
 }
 
 async function loadList(): Promise<StoredSub[]> {
-  // 1) KV
-  if (isKVConfigured()) {
-    const raw = await kvGet(KV_KEY);
+  // 1) Remoto (KV ou Blob)
+  if (remoteMode() !== 'nenhum') {
+    const raw = await remoteGet(KV_KEY);
     if (raw) {
       try {
         const parsed = JSON.parse(raw) as unknown[];
         memoryList = parsed.map(coerce).filter((s): s is StoredSub => s !== null);
         return memoryList;
       } catch {
-        /* JSON corrompido no KV → segue para arquivo/memória */
+        /* JSON corrompido no remoto → segue para arquivo/memória */
       }
     }
   }
@@ -78,8 +80,8 @@ async function loadList(): Promise<StoredSub[]> {
 async function persist(list: StoredSub[]): Promise<void> {
   memoryList = list;
   const json = JSON.stringify(list);
-  if (isKVConfigured()) {
-    const ok = await kvSet(KV_KEY, json);
+  if (remoteMode() !== 'nenhum') {
+    const ok = await remoteSet(KV_KEY, json);
     if (ok) return;
   }
   try {

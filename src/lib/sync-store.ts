@@ -1,7 +1,7 @@
 import 'server-only';
 
 /**
- * STORE dos cofres de sincronização — 3 camadas (KV → arquivo → memória).
+ * STORE dos cofres de sincronização — 4 camadas (remoto → arquivo → memória).
  *
  * O servidor NUNCA vê a senha: guarda apenas {vaultId → envelope cifrado}.
  * Limite: 5 MB por blob, 2.000 cofres. vaultId é a chave (DR-XXXX-…).
@@ -9,7 +9,7 @@ import 'server-only';
 
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import path from 'path';
-import { kvGet, kvSet, isKVConfigured } from './kv';
+import { remoteGet, remoteSet, remoteMode } from './remote-store';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const FILE = path.join(DATA_DIR, 'sync-vaults.json');
@@ -27,8 +27,10 @@ export interface SyncVault {
 let memoryMap = new Map<string, SyncVault>();
 let memoryOnly = false;
 
-export function syncPersistenceMode(): 'kv' | 'arquivo' | 'memoria' {
-  if (isKVConfigured()) return 'kv';
+export function syncPersistenceMode(): 'kv' | 'blob' | 'arquivo' | 'memoria' {
+  const remote = remoteMode();
+  // memoryOnly = última escrita remota E de arquivo falharam → dizer a verdade
+  if (remote !== 'nenhum' && !memoryOnly) return remote;
   return memoryOnly ? 'memoria' : 'arquivo';
 }
 
@@ -48,9 +50,10 @@ export function validEnvelopeSize(envelope: { iv: string; blob: string }): boole
 }
 
 async function loadMap(): Promise<Map<string, SyncVault>> {
-  if (isKVConfigured()) {
-    // No modo KV cada cofre é uma chave própria — o mapa em disco é fallback
-    // apenas quando não há KV. Para listagem evitamos SCAN (não exposto aqui).
+  if (remoteMode() !== 'nenhum') {
+    // No modo remoto (KV/Blob) cada cofre é uma chave própria — o mapa em
+    // disco é fallback apenas quando não há backend. Para listagem evitamos
+    // SCAN/listagem (não exposto aqui).
     return memoryMap;
   }
   try {
@@ -70,8 +73,8 @@ async function loadMap(): Promise<Map<string, SyncVault>> {
 export async function getVault(vaultId: string): Promise<SyncVault | null> {
   const id = vaultId.trim().toUpperCase();
   if (!validVaultId(id)) return null;
-  if (isKVConfigured()) {
-    const raw = await kvGet(KV_KEY_PREFIX + id);
+  if (remoteMode() !== 'nenhum') {
+    const raw = await remoteGet(KV_KEY_PREFIX + id);
     if (raw) {
       try {
         const v = JSON.parse(raw) as SyncVault;
@@ -91,8 +94,8 @@ export async function putVault(vaultId: string, iv: string, blob: string): Promi
   if (!validVaultId(id) || !validEnvelopeSize({ iv, blob })) return false;
   const vault: SyncVault = { vaultId: id, iv, blob, updatedAt: new Date().toISOString() };
   memoryMap.set(id, vault);
-  if (isKVConfigured()) {
-    const ok = await kvSet(KV_KEY_PREFIX + id, JSON.stringify(vault));
+  if (remoteMode() !== 'nenhum') {
+    const ok = await remoteSet(KV_KEY_PREFIX + id, JSON.stringify(vault));
     if (ok) return true;
   }
   try {

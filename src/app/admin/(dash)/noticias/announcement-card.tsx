@@ -58,10 +58,12 @@ export function AnnouncementCard({ ann }: { ann: Announcement }) {
         {
           description:
             json.persistence === 'memoria'
-              ? 'Atenção: inscrições em memória (configure KV na Vercel para persistência real).'
+              ? 'Atenção: inscrições em memória (configure KV ou Blob na Vercel para persistência real).'
               : json.persistence === 'arquivo'
                 ? 'Inscrições persistidas em arquivo (self-host).'
-                : 'Inscrições persistidas no KV.',
+                : json.persistence === 'blob'
+                  ? 'Inscrições persistidas no Vercel Blob.'
+                  : 'Inscrições persistidas no KV.',
         },
       );
     } catch (e) {
