@@ -3,6 +3,7 @@
 /**
  * AppShell — casca da aplicação:
  * - Sidebar premium no desktop + drawer via menu hambúrguer no mobile
+ *   (abre também com swipe da borda esquerda; fecha por arrasto — vaul)
  * - Topbar com hambúrguer (mobile), seletor de ano, busca e modo foco
  * - Modo Foco (esconde distrações)
  * - Busca global (CommandDialog)
@@ -21,8 +22,8 @@ import {
 } from '@/components/ui/command';
 import { Button } from '@/components/ui/button';
 import {
-  Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger,
-} from '@/components/ui/sheet';
+  Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger,
+} from '@/components/ui/drawer';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
   DropdownMenuTrigger,
@@ -160,6 +161,58 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // rodando no mobile (o spotlight precisa enxergar os itens de navegação).
   const mobileNavOpen = manualNavOpen || (tourOpen && isMobileViewport);
 
+  // Gesto nativo: swipe para a direita a partir da borda esquerda abre o
+  // drawer (como apps nativos). Fechar por arrasto é nativo do vaul.
+  // Listeners passivos — sem preventDefault, zero impacto no scroll.
+  // A intenção (horizontal × vertical) é decidida uma única vez por gesto:
+  // rolagens iniciadas na borda nunca disparam o menu.
+  useEffect(() => {
+    if (!isMobileViewport || focusMode || tourOpen || mobileNavOpen) return;
+    const EDGE = 28; // zona da borda (px) — alcança o polegar sem roubar cliques do conteúdo
+    const OPEN_AT = 52; // distância horizontal mínima para abrir
+    let startX = 0;
+    let startY = 0;
+    let armed = false;
+    let intent: 'horizontal' | 'vertical' | null = null;
+    const onStart = (e: TouchEvent) => {
+      const t = e.touches[0];
+      const target = e.target instanceof Element ? e.target : null;
+      // Não armar sobre elementos interativos (ex.: o próprio hambúrguer) —
+      // evita abrir pelo gesto e fechar pelo click de toggle em seguida.
+      armed = t.clientX <= EDGE && !target?.closest('button, a, [role="button"]');
+      startX = t.clientX;
+      startY = t.clientY;
+      intent = null;
+    };
+    const onMove = (e: TouchEvent) => {
+      if (!armed) return;
+      const t = e.touches[0];
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+      if (intent === null && (Math.abs(dx) > 12 || Math.abs(dy) > 12)) {
+        intent = dx > 0 && Math.abs(dx) > Math.abs(dy) * 1.2 ? 'horizontal' : 'vertical';
+        if (intent === 'vertical') armed = false;
+      }
+      if (intent === 'horizontal' && dx > OPEN_AT) {
+        setManualNavOpen(true);
+        armed = false;
+      }
+    };
+    const onEnd = () => {
+      armed = false;
+    };
+    document.addEventListener('touchstart', onStart, { passive: true });
+    document.addEventListener('touchmove', onMove, { passive: true });
+    document.addEventListener('touchend', onEnd, { passive: true });
+    document.addEventListener('touchcancel', onEnd, { passive: true });
+    return () => {
+      document.removeEventListener('touchstart', onStart);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onEnd);
+      document.removeEventListener('touchcancel', onEnd);
+    };
+  }, [isMobileViewport, focusMode, tourOpen, mobileNavOpen]);
+
   return (
     <div className="min-h-screen bg-background">
       {/* ============================ SIDEBAR DESKTOP ============================ */}
@@ -207,14 +260,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex h-14 items-center gap-3 px-4 sm:px-6">
           {/* ===================== HAMBÚRGUER + DRAWER MOBILE ===================== */}
           {/* Substitui a antiga bottom nav: todas as 9 seções em um drawer
-              lateral à esquerda, com a mesma linguagem visual da sidebar
-              desktop (logo, divisória dourada, item ativo, XP e pasta). */}
+              lateral à esquerda (vaul), com a mesma linguagem visual da
+              sidebar desktop (logo, divisória dourada, item ativo, XP e
+              pasta). Abre por hambúrguer ou swipe da borda; fecha por
+              arrasto, overlay, ESC ou X. */}
           {!focusMode && (
-            <Sheet
+            <Drawer
+              direction="left"
               open={mobileNavOpen}
               onOpenChange={(open) => setManualNavOpen(open)}
             >
-              <SheetTrigger asChild>
+              <DrawerTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -223,27 +279,34 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 >
                   <Menu className="h-5 w-5" />
                 </Button>
-              </SheetTrigger>
-              <SheetContent
-                side="left"
-                className="w-[290px] gap-0 border-r border-border/70 bg-sidebar p-0 sm:max-w-[290px]"
-              >
-                <SheetHeader className="p-0">
+              </DrawerTrigger>
+              <DrawerContent className="w-[290px] gap-0 border-r border-border/70 bg-sidebar p-0 sm:max-w-[290px]">
+                <DrawerClose asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-3 top-3 h-8 w-8"
+                    aria-label="Fechar menu"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </DrawerClose>
+                <DrawerHeader className="p-0">
                   <div className="flex items-center gap-3 px-5 py-5">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-gold/40 bg-gold/10">
                       <BookOpenCheck className="h-5 w-5 text-gold" />
                     </div>
                     <div>
-                      <SheetTitle className="font-display text-lg font-bold leading-tight gold-gradient-text">
+                      <DrawerTitle className="font-display text-lg font-bold leading-tight gold-gradient-text">
                         Diário da Riqueza
-                      </SheetTitle>
-                      <SheetDescription className="text-[11px] text-muted-foreground">
+                      </DrawerTitle>
+                      <DrawerDescription className="text-[11px] text-muted-foreground">
                         Treino mental diário
-                      </SheetDescription>
+                      </DrawerDescription>
                     </div>
                   </div>
                   <div className="gold-divider mx-5" />
-                </SheetHeader>
+                </DrawerHeader>
                 <NavList
                   current={view}
                   onItem={(key) => {
@@ -268,8 +331,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     )}
                   </div>
                 </div>
-              </SheetContent>
-            </Sheet>
+              </DrawerContent>
+            </Drawer>
           )}
           <div className="flex items-center gap-2 lg:hidden">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-gold/40 bg-gold/10">
