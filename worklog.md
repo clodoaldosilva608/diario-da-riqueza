@@ -808,3 +808,23 @@ Stage Summary:
 - Navegação mobile unificada: hambúrguer → drawer esquerdo com todas as 9 seções (antes 4-5 escondidas no scroll)
 - Tour guiado continua funcional nos dois breakpoints (drawer auto-abre no mobile)
 - Deploy pendente → commit + push origin main (Vercel)
+---
+Task ID: 31
+Agent: Super Z (main agent)
+Task: Itens 2 e 3 do usuário — (2) swipe da borda esquerda abre o drawer + drag-to-close; (3) persistência real do push/sync (Vercel KV/Blob)
+
+Work Log:
+- ITEM 3 (infra, sem dashboard): endpoint legado POST /v1/storage/stores/kv não existe (404); OpenAPI oficial (openapi.vercel.sh) revelou POST /storage/stores/blob (first-party) — Blob store "diario-da-riqueza-push" criado via API na região gru1 (São Paulo) e conectado ao projeto; BLOB_READ_WRITE_TOKEN injetado automaticamente pela Vercel
+- Token real obtido via GET env por ID com ?decrypt=true (lookup por KEY retorna not_found p/ envs gerenciadas por conexão; decrypt via lista retorna cifrado eyJ...)
+- .env.local tinha sumido de novo (reset do ambiente) — RECONSTRUÍDO integralmente das envs descriptografadas da Vercel (11 vars, incluindo BLOB)
+- src/lib/remote-store.ts (novo): camada remota unificada KV→Blob→'nenhum'; blobPath converte ':' em '/' (pathnames de Blob não aceitam ':'); head()+fetch para leitura, put(addRandomSuffix:false, allowOverwrite) para escrita
+- push-store/sync-store migrados de isKVConfigured/kvGet/kvSet para remoteGet/remoteSet/remoteMode (4 camadas: remoto→arquivo→memória); modos de persistência agora honestos ('memoria' se escrita remota E de arquivo falharem); announcement-card.tsx reconhece modo 'blob'
+- ITEM 2: Sheet → Drawer vaul (direction=left) com drag-follow nativo de fechamento; gesto próprio de abertura por swipe da borda esquerda (zona 28px, intenção horizontal decidida 1× por gesto, listeners passivos, não arma sobre buttons/links para evitar duplo toggle no hambúrguer); botão X (DrawerClose) adicionado
+- E2E local: persistence:'blob'; 2 subscribes gravados sem criar arquivo local; leitura direta do Blob confirmada (dr/push/subscriptions, 491B); sync E2E via Blob (PUT→persistence blob, GET→found:true); drawer: abrir por hambúrguer ✓, abrir por swipe da borda ✓ (TouchEvent dispatch), fechar por X ✓, ESC ✓, overlay ✓, drag-to-close ✓ (CDP trusted mouse events), drag vertical não navega por acidente no fluxo de toque real (browser cancela click pós-move; vaul só descarta no eixo do drawer); desktop intacto (hambúrguer oculto, sidebar 9 itens)
+- ACHADO/ERRO PRÓPRIO: git restore . executado por engano descartou as edições não-commitadas de 4 arquivos — reaplicadas integralmente do contexto e revalidadas (tsc/eslint/build verdes); lição reforçada: NUNCA usar git restore . com work em progresso
+- Dados de teste removidos do Blob (0 blobs restantes); package-lock.json espúrio do npm i descartado (projeto usa bun.lock; @vercel/blob@2.8.0 registrado via bun add)
+
+Stage Summary:
+- Push e sync com persistência REAL em produção (Vercel Blob, primeira-party, sem conta externa nem dashboard) — cron das 20h BRT agora lê inscrições de qualquer instância
+- Navegação mobile nível app nativo: swipe da borda abre, arrasto fecha com follow
+- Pendências do usuário restantes: revogar/renovar tokens expostos no chat (ghp_/vcp_)
