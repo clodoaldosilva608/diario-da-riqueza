@@ -745,3 +745,21 @@ Stage Summary:
 - 6 features novas em produção; push ativa após configurar VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY na Vercel (chaves no .env.local local)
 - Persistência server-side real requer KV_REST_API_URL/KV_REST_API_TOKEN (Vercel KV/Upstash) — hoje degrada honestamente
 - Pendências herdadas: Task 24 (bug criar sonho) — verificar se o fix de UX atual resolve no dispositivo do usuário
+---
+Task ID: 28
+Agent: Super Z (main agent)
+Task: Ativação do push real em produção — env vars VAPID na Vercel + redeploy
+
+Work Log:
+- .env.local local não sobreviveu ao reset do ambiente (só .env com DATABASE_URL) — novas chaves VAPID geradas com npx web-push generate-vapid-keys e regravadas em .env.local (gitignored)
+- Token Vercel fornecido pelo usuário validado via API (GET /v2/user → clodoaldosilva608); projeto localizado: diario-da-riqueza (prj_RmYNRkVYWtnrAgFDwb0kyb2dOXoj)
+- Env vars criadas via POST /v10/projects/{id}/env (upsert=true): VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (mailto:clodoaldosilva608@gmail.com) — encrypted, targets production+preview+development (valores NÃO registrados neste arquivo)
+- 45 mudanças só-de-modo (chmod) descartadas com git restore; worktree limpo
+- Redeploy disparado via git push main → deploy Vercel automático já com as env novas no runtime
+- Verificação pós-deploy: GET /api/push/status em produção (configured/publicKey/persistence)
+- KV (opcional): conta sem stores existentes; conexão Upstash exige fluxo interativo no dashboard (Vercel → Storage → Create KV) — documentado como pendência para persistência permanente
+
+Stage Summary:
+- Push real ATIVO em produção: configured=true com chaves VAPID próprias (geradas nesta sessão)
+- Sem KV: subscriptions vivem em memória da instância serverless (cron 23h UTC pode não alcançá-las) — conectar Vercel KV no dashboard para persistência definitiva
+- Usuários que tentaram ativar push antes desta configuração não têm subscription válida — reinscrição é necessária e inofensiva
