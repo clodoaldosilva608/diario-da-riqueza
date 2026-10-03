@@ -766,3 +766,25 @@ Stage Summary:
 - Push real ATIVO em produção: configured=true com chaves VAPID próprias (geradas nesta sessão)
 - Sem KV: subscriptions vivem em memória da instância serverless (cron 23h UTC pode não alcançá-las) — conectar Vercel KV no dashboard para persistência definitiva
 - Usuários que tentaram ativar push antes desta configuração não têm subscription válida — reinscrição é necessária e inofensiva
+---
+Task ID: 29
+Agent: Super Z (main agent)
+Task: Auditoria E2E simulando usuário real em produção + melhorias identificadas e implementadas
+
+Work Log:
+- E2E completo na PRODUÇÃO (agent-browser, perfil novo): landing → onboarding 5 passos → 9 views clicando em TODOS os botões de ação (lição da auditoria antiga)
+- Validado funcionando: onboarding (nome/meta/aparência), mensagem permanente + banner de avisos, desafios com Resgatar (+25 XP cada, 270→410 XP), celebração de XP full-screen, selo compartilhável (canvas 540×675 + Baixar PNG), diário completo (+90 XP, streak 4), criar sonho via Enter E botão + feedback em campo vazio (Task 24 NÃO reproduz mais), cofrinho (R$500 de R$5.000 = 10%), Nova meta, importação CSV (preview + categorização auto Alimentação/Salário/Transporte + 4 lançamentos), gráficos (9 recharts), projeção integrada à meta, biblioteca, relatório do mês (vs mês ant., poupança 79%) + PDF baixado + imagem com fallback, conquistas 1/12, ajuda com card Sugestões, push fail-closed honesto (permissão negada → toast claro), cofre E2E (código DR-… + senha + envio cifrado com aviso KV), exportações completas, busca global, 0 erros de console em toda a sessão
+- ACHADO 1 (bug real): <input type=number> saneia vírgula para "" no React — BR digitando "77,50" perdia o valor silenciosamente (reproduzido e confirmado no código: parseFloat + type=number)
+- CORREÇÃO: parseBRLNumber() em src/lib/format.ts (77,50 | 1.234,56 | R$ 1.234,56 | 1,234.56 | negativo contábil; regra do último separador) + <MoneyInput> (text + inputMode=decimal) aplicado em 7 arquivos: orçamento, diário (receita/despesa), cofrinho (depósito+meta), metas (alvo+atual), onboarding, configurações, ImportDialog (preview)
+- ACHADO 2: pop-up de outreach ("Compartilhe") interceptou o clique do cofrinho em E2E real — guarda anyFlowDialogOpen() adicionada em OutreachDialogs (attempt + cadeia): posterga 60s se houver [role=dialog] aberto
+- Testes: src/lib/format.test.ts com 6 casos; suíte 33/33 verde; tsc 0 erros; eslint limpo; next build OK
+- E2E local do fix: onboarding com "100000,50" mantido + Avançar habilita; lançamento "77,50" registrado e exibido como R$ 77,50
+- Deploy: commit 67f8875 → Vercel READY; inputMode:"decimal" confirmado nos chunks de produção; homepage 200
+- KV segue como pendência do usuário (dashboard → Storage → Upstash) para push/sync duráveis; sincronização sem KV só persiste na instância que recebeu o PUT (confirmado via /api/sync?vaultId → found:false após PUT em outra instância)
+
+Stage Summary:
+- App 100% funcional para usuário real: nenhum botão morto encontrado nas 9 views
+- Task 24 encerrada de facto: criar sonho funciona via Enter e botão, com feedback de validação
+- Qualidade BR: todos os campos monetários aceitam vírgula (bug silencioso corrigido em 7 telas)
+- Pop-ups de apoio não interferem mais no fluxo do usuário
+- Produção: 67f8875 ao vivo e verificado
