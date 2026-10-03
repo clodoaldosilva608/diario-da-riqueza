@@ -828,3 +828,8 @@ Stage Summary:
 - Push e sync com persistência REAL em produção (Vercel Blob, primeira-party, sem conta externa nem dashboard) — cron das 20h BRT agora lê inscrições de qualquer instância
 - Navegação mobile nível app nativo: swipe da borda abre, arrasto fecha com follow
 - Pendências do usuário restantes: revogar/renovar tokens expostos no chat (ghp_/vcp_)
+
+### Adendo Task 31 — verificação de produção + receita de recuperação de envs
+- Produção (06c9683 READY): status {configured:true, persistence:'blob'}; publicKey de produção CONFERE com VAPID local (BIERaJ6F…); subscribe → total:1 e cron autenticado (Bearer) leu a inscrição de OUTRA instância via Blob → {ok:true, sent:0, total:1} — persistência cross-instance PROVADA; inscrição de teste removida via /api/push/unsubscribe; swipe da borda abriu o drawer em produção (9 itens)
+- RECEITA CRÍTICA p/ recuperar .env.local após reset do ambiente: decrypt=true na LISTA de envs retorna CIFRADO (eyJ…); o decrypt REAL funciona apenas por ID: GET /v9/projects/{proj}/env/{envId}?decrypt=true (o envId vem da lista; lookup por KEY retorna not_found p/ envs gerenciadas por conexão como BLOB_READ_WRITE_TOKEN)
+- Vercel Cron das 20h BRT segue funcionando: a plataforma envia o header com a env real (o 401 visto durante o teste foi só o .env.local cifrado local)
