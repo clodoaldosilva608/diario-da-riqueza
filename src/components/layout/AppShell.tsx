@@ -2,17 +2,17 @@
 
 /**
  * AppShell — casca da aplicação:
- * - Sidebar premium no desktop + bottom nav no mobile
- * - Topbar com seletor de ano, busca, modo foco e status da pasta
+ * - Sidebar premium no desktop + drawer via menu hambúrguer no mobile
+ * - Topbar com hambúrguer (mobile), seletor de ano, busca e modo foco
  * - Modo Foco (esconde distrações)
  * - Busca global (CommandDialog)
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { motion } from 'framer-motion';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
-  BookOpenCheck, LayoutDashboard, NotebookPen, Target, Wallet, LibraryBig,
+  BookOpenCheck, LayoutDashboard, Menu, NotebookPen, Target, Wallet, LibraryBig,
   BarChart3, Trophy, Settings, Search, X, Maximize2, Minimize2, HardDrive,
   CloudOff, ChevronsUpDown, CircleDollarSign, LifeBuoy,
 } from 'lucide-react';
@@ -20,6 +20,9 @@ import {
   CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
 } from '@/components/ui/command';
 import { Button } from '@/components/ui/button';
+import {
+  Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger,
+} from '@/components/ui/sheet';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
   DropdownMenuTrigger,
@@ -45,6 +48,41 @@ const NAV: Array<{ key: ViewKey; label: string; icon: React.ComponentType<{ clas
   { key: 'config', label: 'Configurações', icon: Settings },
 ];
 
+/**
+ * Lista de navegação compartilhada entre a sidebar (desktop) e o drawer
+ * (mobile) — garante um único modelo mental: mesmos itens, mesmos ícones,
+ * mesmo estado ativo dourado e mesmos data-tour para o TourGuide.
+ */
+function NavList({ current, onItem }: { current: ViewKey; onItem: (key: ViewKey) => void }) {
+  return (
+    <nav
+      aria-label="Navegação principal"
+      className="mt-3 flex-1 space-y-1 overflow-y-auto px-3 pb-4"
+    >
+      {NAV.map((item) => {
+        const active = current === item.key;
+        return (
+          <button
+            key={item.key}
+            data-tour={`nav-${item.key}`}
+            onClick={() => onItem(item.key)}
+            aria-current={active ? 'page' : undefined}
+            className={cn(
+              'group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all',
+              active
+                ? 'bg-gold/12 text-gold border border-gold/25'
+                : 'text-muted-foreground hover:bg-sidebar-accent hover:text-foreground border border-transparent',
+            )}
+          >
+            <item.icon className={cn('h-4.5 w-4.5 shrink-0', active && 'text-gold')} />
+            {item.label}
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const view = useAppStore((s) => s.view);
   const setView = useAppStore((s) => s.setView);
@@ -59,7 +97,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const tourOpen = useAppStore((s) => s.tourOpen);
 
   const [query, setQuery] = useState('');
-  const mobileNavRef = useRef<HTMLDivElement>(null);
+  // Abertura manual do drawer (hambúrguer). O estado final é derivado:
+  // manual OU tour guiado em viewport mobile — sem setState em effect.
+  const [manualNavOpen, setManualNavOpen] = useState(false);
   const years = useAvailableYears();
   const entries = useLiveQuery(() => db.entries.toArray(), [], []);
   const gam = useGamification(entries);
@@ -104,17 +144,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const viewTitle = useMemo(() => NAV.find((n) => n.key === view)?.label ?? '', [view]);
 
-  // Mantém o item ativo visível na nav mobile com scroll horizontal.
-  // Durante o tour, quem rola a nav é o TourGuide (destaca item a item) —
-  // ao fechar, re-centraliza o item ativo da view atual.
-  useEffect(() => {
-    if (tourOpen) return;
-    const t = setTimeout(() => {
-      const el = mobileNavRef.current?.querySelector<HTMLElement>(`[data-tour="nav-${view}"]`);
-      el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-    }, 80);
-    return () => clearTimeout(t);
-  }, [view, tourOpen]);
+  // Viewport mobile (< lg) — reativa a redimensionamento. No SSR/antes da
+  // hidratação assume false (getServerSnapshot) para evitar mismatch.
+  const isMobileViewport = useSyncExternalStore(
+    (cb) => {
+      const mq = window.matchMedia('(max-width: 1023px)');
+      mq.addEventListener('change', cb);
+      return () => mq.removeEventListener('change', cb);
+    },
+    () => window.matchMedia('(max-width: 1023px)').matches,
+    () => false,
+  );
+
+  // Drawer aberto = usuário abriu pelo hambúrguer OU o tour guiado está
+  // rodando no mobile (o spotlight precisa enxergar os itens de navegação).
+  const mobileNavOpen = manualNavOpen || (tourOpen && isMobileViewport);
 
   return (
     <div className="min-h-screen bg-background">
@@ -133,27 +177,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           <div className="gold-divider mx-5" />
-          <nav className="mt-3 flex-1 space-y-1 overflow-y-auto px-3 pb-4">
-            {NAV.map((item) => {
-              const active = view === item.key;
-              return (
-                <button
-                  key={item.key}
-                  data-tour={`nav-${item.key}`}
-                  onClick={() => setView(item.key)}
-                  className={cn(
-                    'group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all',
-                    active
-                      ? 'bg-gold/12 text-gold border border-gold/25'
-                      : 'text-muted-foreground hover:bg-sidebar-accent hover:text-foreground border border-transparent',
-                  )}
-                >
-                  <item.icon className={cn('h-4.5 w-4.5 shrink-0', active && 'text-gold')} />
-                  {item.label}
-                </button>
-              );
-            })}
-          </nav>
+          <NavList current={view} onItem={setView} />
           <div className="border-t border-border/70 p-4">
             <LevelBadge xp={gam.totalXP} />
             <div className="mt-3 flex items-center gap-2 text-[11px] text-muted-foreground">
@@ -181,6 +205,72 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         )}
       >
         <div className="flex h-14 items-center gap-3 px-4 sm:px-6">
+          {/* ===================== HAMBÚRGUER + DRAWER MOBILE ===================== */}
+          {/* Substitui a antiga bottom nav: todas as 9 seções em um drawer
+              lateral à esquerda, com a mesma linguagem visual da sidebar
+              desktop (logo, divisória dourada, item ativo, XP e pasta). */}
+          {!focusMode && (
+            <Sheet
+              open={mobileNavOpen}
+              onOpenChange={(open) => setManualNavOpen(open)}
+            >
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="-ml-2 h-9 w-9 lg:hidden"
+                  aria-label="Abrir menu de navegação"
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent
+                side="left"
+                className="w-[290px] gap-0 border-r border-border/70 bg-sidebar p-0 sm:max-w-[290px]"
+              >
+                <SheetHeader className="p-0">
+                  <div className="flex items-center gap-3 px-5 py-5">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-gold/40 bg-gold/10">
+                      <BookOpenCheck className="h-5 w-5 text-gold" />
+                    </div>
+                    <div>
+                      <SheetTitle className="font-display text-lg font-bold leading-tight gold-gradient-text">
+                        Diário da Riqueza
+                      </SheetTitle>
+                      <SheetDescription className="text-[11px] text-muted-foreground">
+                        Treino mental diário
+                      </SheetDescription>
+                    </div>
+                  </div>
+                  <div className="gold-divider mx-5" />
+                </SheetHeader>
+                <NavList
+                  current={view}
+                  onItem={(key) => {
+                    setView(key);
+                    setManualNavOpen(false);
+                  }}
+                />
+                {/* Rodapé com safe-area para iPhones com notch */}
+                <div className="border-t border-border/70 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+                  <LevelBadge xp={gam.totalXP} />
+                  <div className="mt-3 flex items-center gap-2 text-[11px] text-muted-foreground">
+                    {folderConnected ? (
+                      <>
+                        <HardDrive className="h-3.5 w-3.5 text-emerald-wealth" />
+                        <span className="truncate">Pasta: {folderName}</span>
+                      </>
+                    ) : (
+                      <>
+                        <CloudOff className="h-3.5 w-3.5" />
+                        <span>Pasta não conectada</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+          )}
           <div className="flex items-center gap-2 lg:hidden">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-gold/40 bg-gold/10">
               <BookOpenCheck className="h-4 w-4 text-gold" />
@@ -240,7 +330,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* ============================ CONTEÚDO ============================ */}
-      <main className={cn('min-h-[calc(100vh-3.5rem)] pb-24 lg:pb-10', !focusMode && 'lg:pl-64')}>
+      <main className={cn('min-h-[calc(100vh-3.5rem)] pb-10', !focusMode && 'lg:pl-64')}>
         <motion.div
           key={view}
           initial={{ opacity: 0, y: 8 }}
@@ -251,46 +341,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {children}
         </motion.div>
       </main>
-
-      {/* ============================ BOTTOM NAV MOBILE ============================ */}
-      {/* Linha única com scroll horizontal — 9 seções em ~56px de altura, sem
-          cobrir o conteúdo e com alvos de toque confortáveis (min 56px). */}
-      {!focusMode && (
-        <nav
-          className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)] lg:hidden no-print"
-          aria-label="Navegação principal (mobile)"
-        >
-          <div
-            ref={mobileNavRef}
-            className="flex overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {NAV.map((item) => {
-              const active = view === item.key;
-              return (
-                <button
-                  key={item.key}
-                  data-tour={`nav-${item.key}`}
-                  onClick={() => setView(item.key)}
-                  aria-current={active ? 'page' : undefined}
-                  className={cn(
-                    'relative flex min-h-[56px] min-w-[64px] shrink-0 flex-col items-center justify-center gap-1 px-3 text-[10px] font-medium transition-colors',
-                    active ? 'text-gold' : 'text-muted-foreground',
-                  )}
-                >
-                  {active && (
-                    <span
-                      aria-hidden="true"
-                      className="absolute inset-x-3 top-0 h-0.5 rounded-full bg-gold"
-                    />
-                  )}
-                  <item.icon className="h-5 w-5" />
-                  <span className="whitespace-nowrap leading-none">{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </nav>
-      )}
 
       {/* ============================ BUSCA GLOBAL ============================ */}
       <CommandDialog open={searchOpen} onOpenChange={setSearchOpen}>

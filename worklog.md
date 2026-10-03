@@ -788,3 +788,23 @@ Stage Summary:
 - Qualidade BR: todos os campos monetários aceitam vírgula (bug silencioso corrigido em 7 telas)
 - Pop-ups de apoio não interferem mais no fluxo do usuário
 - Produção: 67f8875 ao vivo e verificado
+---
+Task ID: 30
+Agent: Super Z (main agent)
+Task: Menu da dashboard via botão hambúrguer + sidebar lateral (remover bottom nav mobile)
+
+Work Log:
+- Opinião/sugestões UX entregues: bottom nav com scroll horizontal escondia ~4 das 9 seções; drawer unifica modelo mental com a sidebar desktop e libera 56px+ de conteúdo
+- AppShell refatorado: bottom nav REMOVIDA; hambúrguer na topbar (lg:hidden, oculto no Modo Foco) abre Sheet side=left (Radix Dialog → focus trap, ESC, overlay, X) com a MESMA linguagem visual da sidebar desktop (logo dourado, gold-divider, item ativo, LevelBadge + status da pasta no rodapé)
+- NavList extraído como componente compartilhado entre sidebar desktop e drawer mobile (mesmos data-tour para o TourGuide); main pb-24→pb-10 (espaço recuperado)
+- Estado do drawer DERIVADO (manual || tour&&isMobileViewport) em vez de setState em effect — eslint react-hooks/set-state-in-effect satisfeito; isMobileViewport via useSyncExternalStore+matchMedia (SSR-safe)
+- TourGuide: re-medição diferida (350/700ms) para o spotlight acomodar a animação de slide-in do drawer; no mobile o drawer abre automaticamente durante o tour
+- Validação tripla: tsc 0 erros src/, eslint limpo, next build OK
+- E2E local (agent-browser, viewport 375×667): onboarding completo → tour abre drawer automaticamente → spotlight nos itens → drawer fecha ao encerrar tour; hambúrguer abre com os 9 itens visíveis; clique em item navega e fecha drawer; ESC fecha; overlay fecha; Modo Foco esconde hambúrguer (e devolve); bottom nav inexistente
+- E2E desktop (1280×800): hambúrguer oculto, sidebar fixa com 9 itens clicáveis (varredura completa), "Refazer tour guiado" NÃO abre drawer no desktop
+- Screenshots: download/teste-tour-drawer-mobile.png, teste-drawer-aberto-mobile.png, teste-sidebar-desktop.png
+
+Stage Summary:
+- Navegação mobile unificada: hambúrguer → drawer esquerdo com todas as 9 seções (antes 4-5 escondidas no scroll)
+- Tour guiado continua funcional nos dois breakpoints (drawer auto-abre no mobile)
+- Deploy pendente → commit + push origin main (Vercel)

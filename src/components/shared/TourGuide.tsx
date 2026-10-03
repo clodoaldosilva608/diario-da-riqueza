@@ -5,8 +5,8 @@
  *
  * Percorre os itens de navegação destacando cada área do app com um furo de
  * luz (box-shadow invertido) e um cartão explicativo ancorado. Funciona no
- * desktop (sidebar) e no mobile (bottom nav) escolhendo o alvo visível.
- * Passos: boas-vindas → 8 áreas → conclusão com atalhos.
+ * desktop (sidebar fixa) e no mobile (drawer do hambúrguer, que o AppShell
+ * abre automaticamente durante o tour). Passos: boas-vindas → 8 áreas → conclusão com atalhos.
  */
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -139,10 +139,17 @@ export function TourGuide() {
   useEffect(() => {
     if (!tourOpen) return;
     const raf = requestAnimationFrame(measure);
+    // Re-medição diferida: cobre a animação de abertura do drawer mobile
+    // (slide-in ~500ms) e outras transições de layout que não disparam
+    // scroll/resize — sem isso o spotlight apontaria para posição velha.
+    const t1 = setTimeout(measure, 350);
+    const t2 = setTimeout(measure, 700);
     window.addEventListener('resize', measure);
     window.addEventListener('scroll', measure, true);
     return () => {
       cancelAnimationFrame(raf);
+      clearTimeout(t1);
+      clearTimeout(t2);
       window.removeEventListener('resize', measure);
       window.removeEventListener('scroll', measure, true);
     };
