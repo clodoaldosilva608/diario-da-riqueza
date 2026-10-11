@@ -42,6 +42,7 @@
   --color-gold-light: var(--gold-light);
   --color-emerald-wealth: var(--emerald-wealth);
   --color-loss: var(--loss);
+  --color-navy-wealth: var(--navy-wealth);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -89,6 +90,7 @@
   --gold-light: #f5d061;
   --emerald-wealth: #10b981;
   --loss: #f87171;
+  --navy-wealth: #16203a;
 }
 
 /* ============================================================
@@ -130,6 +132,7 @@
   --gold-light: #c9a227;
   --emerald-wealth: #059669;
   --loss: #dc2626;
+  --navy-wealth: #1b2743;
 }
 
 @layer base {

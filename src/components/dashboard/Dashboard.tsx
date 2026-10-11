@@ -12,7 +12,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { toast } from 'sonner';
 import {
   Flame, Sparkles, BookOpen, TrendingUp, Wallet, Trophy, CalendarCheck2,
-  Quote, ArrowRight, Medal, Target, X,
+  Quote, ArrowRight, Medal, Target, X, ChartNoAxesCombined,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -133,6 +133,23 @@ export function Dashboard({ onOpenEntry }: { onOpenEntry: (date: string) => void
         registered={gam.registeredToday}
         onClick={() => setView('diario')}
       />
+
+      {/* Atalho: Painel Financeiro do mês */}
+      <button
+        onClick={() => setView('painel')}
+        className="group flex w-full items-center gap-3 rounded-2xl border border-gold/30 bg-gradient-to-r from-navy-wealth/80 via-card to-card p-4 text-left transition-colors hover:border-gold/60"
+      >
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold/15">
+          <ChartNoAxesCombined className="h-5 w-5 text-gold" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold">Painel Financeiro do mês</p>
+          <p className="text-xs text-muted-foreground">
+            Score de saúde, contas bancárias, destino do dinheiro e orçamento vs realizado
+          </p>
+        </div>
+        <ArrowRight className="h-4 w-4 shrink-0 text-gold transition-transform group-hover:translate-x-1" />
+      </button>
 
       {/* Banner: dados de exemplo prontos para explorar */}
       {showExampleBanner && (

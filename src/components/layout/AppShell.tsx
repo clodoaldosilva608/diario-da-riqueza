@@ -15,7 +15,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import {
   BookOpenCheck, LayoutDashboard, Menu, NotebookPen, Target, Wallet, LibraryBig,
   BarChart3, Trophy, Settings, Search, X, Maximize2, Minimize2, HardDrive,
-  CloudOff, ChevronsUpDown, CircleDollarSign, LifeBuoy,
+  CloudOff, ChevronsUpDown, CircleDollarSign, LifeBuoy, ChartNoAxesCombined,
 } from 'lucide-react';
 import {
   CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
@@ -39,6 +39,7 @@ import type { ViewKey } from '@/types';
 
 const NAV: Array<{ key: ViewKey; label: string; icon: React.ComponentType<{ className?: string }> }> = [
   { key: 'dashboard', label: 'Início', icon: LayoutDashboard },
+  { key: 'painel', label: 'Painel Financeiro', icon: ChartNoAxesCombined },
   { key: 'diario', label: 'Diário', icon: NotebookPen },
   { key: 'sonhos', label: 'Sonhos & Metas', icon: Target },
   { key: 'orcamento', label: 'Orçamento', icon: Wallet },

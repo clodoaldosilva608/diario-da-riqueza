@@ -70,6 +70,7 @@ export const XP_RULES: Record<XPType, number> = {
 
 export type ViewKey =
   | 'dashboard'
+  | 'painel'
   | 'diario'
   | 'sonhos'
   | 'orcamento'
@@ -105,6 +106,8 @@ export interface Profile {
   yearGoal: number;
   /** Data-alvo para atingir a meta — 'yyyy-MM-dd' */
   targetDate: string;
+  /** Personagem do Painel — 'ele' | 'ela' (padrão 'ele') */
+  character?: 'ele' | 'ela';
   createdAt: string;
   updatedAt: string;
 }
@@ -153,10 +156,23 @@ export interface BudgetEntry {
   /** 'yyyy-MM-dd' */
   date: string;
   frequency: BudgetFrequency;
+  /** Receita recebida / despesa paga — undefined = liquidado (compat c/ registros antigos) */
+  paid?: boolean;
+  /** Conta ou cartão (texto livre) — alimenta os blocos de conta do Painel */
+  account?: string;
   createdAt: string;
   updatedAt?: string;
   exemplo?: boolean;
 }
+
+/** Natureza macro de uma categoria — blocos "Saídas por natureza" do Painel */
+export type CategoryNature = 'essenciais' | 'nao_essenciais' | 'investimento';
+
+export const NATURE_LABELS: Record<CategoryNature, string> = {
+  essenciais: 'Gastos essenciais',
+  nao_essenciais: 'Gastos não essenciais',
+  investimento: 'Investimentos e futuro',
+};
 
 /** Tema de estudo (curriculum pré-semeado + temas custom) */
 export interface Study {

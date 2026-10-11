@@ -9,7 +9,7 @@ import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
   Wallet, Plus, TrendingUp, TrendingDown, PiggyBank, Trash2, Pencil,
-  Repeat, CalendarClock, ChartPie, FileUp,
+  Repeat, CalendarClock, ChartPie, FileUp, CheckCircle2,
 } from 'lucide-react';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -71,6 +71,14 @@ export function BudgetView() {
   const [value, setValue] = useState('');
   const [date, setDate] = useState('');
   const [mensal, setMensal] = useState(false);
+  const [paid, setPaid] = useState(true);
+  const [account, setAccount] = useState('');
+
+  /** Contas já usadas — alimentam o datalist do campo Conta/Cartão */
+  const knownAccounts = useMemo(
+    () => [...new Set(budget.map((b) => (b.account ?? '').trim()).filter(Boolean))].sort(),
+    [budget],
+  );
 
   const summary = monthlyTotals(budget, selectedYear, month);
   const savingRate = summary.income > 0 ? Math.round((summary.balance / summary.income) * 100) : 0;
@@ -169,6 +177,8 @@ export function BudgetView() {
     setValue('');
     setDate(`${selectedYear}-${String(month + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`);
     setMensal(false);
+    setPaid(true);
+    setAccount('');
     setDialogOpen(true);
   }
 
@@ -180,6 +190,8 @@ export function BudgetView() {
     setValue(numberToBR(b.value));
     setDate(b.date);
     setMensal(b.frequency === 'mensal');
+    setPaid(b.paid !== false);
+    setAccount(b.account ?? '');
     setDialogOpen(true);
   }
 
@@ -200,6 +212,8 @@ export function BudgetView() {
       value: v,
       date,
       frequency: mensal ? ('mensal' as const) : ('unica' as const),
+      paid,
+      account: account.trim() || undefined,
     };
     if (editing?.id) {
       await updateBudgetEntry(editing.id, payload);
@@ -304,9 +318,15 @@ export function BudgetView() {
                           {b.frequency === 'mensal' && (
                             <Repeat className="ml-1.5 inline h-3 w-3 text-gold" aria-label="Recorrente" />
                           )}
+                          {b.paid === false && (
+                            <span className="ml-1.5 inline-flex items-center rounded-full border border-amber/40 bg-amber/10 px-1.5 py-px text-[10px] font-bold uppercase tracking-wide text-amber" title={b.type === 'receita' ? 'A receber' : 'Não pago'}>
+                              {b.type === 'receita' ? 'a receber' : 'em aberto'}
+                            </span>
+                          )}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {b.category} • {b.date.split('-').reverse().join('/')}
+                          {b.account?.trim() ? ` • ${b.account.trim()}` : ''}
                           {b.frequency === 'mensal' && ' • todo mês'}
                         </p>
                       </div>
@@ -556,6 +576,34 @@ export function BudgetView() {
                 <p className="text-xs text-muted-foreground">Salário, aluguel, assinaturas fixas…</p>
               </div>
               <Switch checked={mensal} onCheckedChange={setMensal} aria-label="Lançamento mensal" />
+            </div>
+            <div className="flex items-center justify-between rounded-xl border border-border p-3">
+              <div>
+                <p className="flex items-center gap-1.5 text-sm font-semibold">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-wealth" />
+                  {type === 'receita' ? 'Já recebi' : 'Já paguei'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {type === 'receita' ? 'Desmarque se está prevista e ainda não caiu.' : 'Desmarque para acompanhar contas em aberto.'}
+                </p>
+              </div>
+              <Switch checked={paid} onCheckedChange={setPaid} aria-label={type === 'receita' ? 'Receita recebida' : 'Despesa paga'} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="b-account">Conta / Cartão (opcional)</Label>
+              <Input
+                id="b-account"
+                list="b-accounts-list"
+                placeholder="Ex.: Nubank, Itaú, Inter, Cartão…"
+                value={account}
+                onChange={(e) => setAccount(e.target.value)}
+              />
+              <datalist id="b-accounts-list">
+                {knownAccounts.map((a) => (
+                  <option key={a} value={a} />
+                ))}
+              </datalist>
+              <p className="text-xs text-muted-foreground">Usado pelo Painel Financeiro: saldo por conta e gastos por cartão.</p>
             </div>
             <Button onClick={handleSave} className="w-full bg-gold text-black hover:bg-gold-light">
               {editing ? 'Salvar alterações' : 'Registrar lançamento'}

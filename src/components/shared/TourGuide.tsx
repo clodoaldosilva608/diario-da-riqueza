@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpenCheck, NotebookPen, Target, Wallet, LibraryBig, BarChart3, Trophy,
   LifeBuoy, Settings, LayoutDashboard, X, ChevronLeft, ChevronRight, PlayCircle,
+  ChartNoAxesCombined,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -32,6 +33,12 @@ const STEPS: TourStep[] = [
     icon: BookOpenCheck,
     title: 'Bem-vindo ao seu Diário da Riqueza!',
     text: 'Este tour rápido (1 minuto) mostra cada área do app. Você já começa com dados de exemplo para explorar — depois edita ou apaga tudo como quiser.',
+  },
+  {
+    targetId: 'nav-painel',
+    icon: ChartNoAxesCombined,
+    title: 'Painel Financeiro',
+    text: 'O retrato do seu mês: score de saúde financeira, contas bancárias, para onde vai o dinheiro e orçamento vs realizado — tudo em um só lugar.',
   },
   {
     targetId: 'nav-diario',

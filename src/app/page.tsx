@@ -11,6 +11,7 @@ import { LandingPage } from '@/components/landing/LandingPage';
 import { Onboarding } from '@/components/onboarding/Onboarding';
 import { AppShell } from '@/components/layout/AppShell';
 import { Dashboard } from '@/components/dashboard/Dashboard';
+import { PanelView } from '@/components/panel/PanelView';
 import { DiaryView } from '@/components/diary/DiaryView';
 import { GoalsView } from '@/components/goals/GoalsView';
 import { BudgetView } from '@/components/budget/BudgetView';
@@ -112,6 +113,7 @@ export default function Home() {
     <>
       <AppShell>
         {view === 'dashboard' && <Dashboard onOpenEntry={() => useAppStore.getState().setView('diario')} />}
+        {view === 'painel' && <PanelView />}
         {view === 'diario' && <DiaryView />}
         {view === 'sonhos' && <GoalsView />}
         {view === 'orcamento' && <BudgetView />}
